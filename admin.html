@@ -732,7 +732,7 @@ function renderOverview(revenue, activeUsers, convs) {
         <div style="font-weight:600;font-size:13px;color:#fbbf24;">${adminState.pendingUnlocks.length} payment${adminState.pendingUnlocks.length>1?'s':''} pending confirmation</div>
         <div style="font-size:12px;color:var(--muted);margin-top:2px;">${adminState.pendingUnlocks.map(p=>p.userName).join(', ')} — verify M-Pesa and unlock</div>
       </div>
-      <button onclick="setPage('users')" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Review →</button>
+      <button onclick="setPage('users')" style="background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);color:#fbbf24;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Manage →</button>
     </div>
     ` : ''}
     
@@ -772,9 +772,9 @@ function renderOverview(revenue, activeUsers, convs) {
         <table>
           <thead><tr><th>User</th><th>Profile</th><th>Messages</th></tr></thead>
           <tbody>
-            ${Object.values(adminState.conversations).map(c => `
+            ${Object.values(adminState.conversations).slice(0, 5).map(c => `
             <tr style="cursor:pointer;" onclick="setPage('messages');adminState.activeConv='${Object.keys(adminState.conversations).find(k=>adminState.conversations[k]===c)}';render()">
-              <td><div class="user-cell"><img class="user-avatar-sm" src="${c.profilePhoto}" onerror="this.style.display='none'">${c.userName}</div></td>
+              <td><div class="user-cell"><span>${c.userName}</span></div></td>
               <td style="color:var(--accent2);">${c.profileName}</td>
               <td>${c.messages.length}</td>
             </tr>
@@ -826,7 +826,6 @@ function renderMessages() {
           const last = c.messages[c.messages.length-1];
           return `
           <div class="conv-item ${adminState.activeConv===key?'active':''}" onclick="adminState.activeConv='${key}';render()">
-            <img class="conv-avatar" src="${c.profilePhoto}" alt="${c.profileName}" onerror="this.style.display='none'">
             <div style="flex:1;min-width:0;">
               <div class="conv-name">${c.userName}</div>
               <div style="font-size:10px;color:var(--accent2);">as ${c.profileName}</div>
@@ -856,7 +855,6 @@ function renderReplyPanel() {
   return `
   <div class="reply-panel">
     <div class="reply-header">
-      <img src="${conv.profilePhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
       <div>
         <div style="font-size:13px;font-weight:600;">Replying as ${conv.profileName}</div>
         <div style="font-size:11px;color:var(--muted);">to ${conv.userName}</div>
@@ -942,7 +940,7 @@ function renderUsers() {
           <tr>
             <td>
               <div class="user-cell">
-                <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">
+                <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">
                   ${u.name[0]}
                 </div>
                 <div>
@@ -956,16 +954,11 @@ function renderUsers() {
             <td><span style="font-weight:600;">${u.msgCount}</span></td>
             <td>
               <span style="font-weight:700;color:var(--success);">$${u.balance.toFixed(2)}</span>
-              <button class="action-btn success" onclick="showEditBalance(${u.id})" style="margin-left:6px;">Edit</button>
             </td>
             <td>
               ${adminState.unlockedUsers[u.id] 
                 ? '<span class="status-badge unlocked">✓ Unlocked</span>' 
                 : '<span class="status-badge inactive">Locked</span>'}
-              <button class="action-btn ${adminState.unlockedUsers[u.id]?'danger':'success'}" 
-                onclick="${adminState.unlockedUsers[u.id]?`revokeAccess(${u.id})`:`grantAccess(${u.id})`}" style="margin-left:6px;">
-                ${adminState.unlockedUsers[u.id]?'Revoke':'Unlock'}
-              </button>
             </td>
             <td style="font-size:12px;color:var(--muted);">${u.lastActive}</td>
             <td>
@@ -981,17 +974,6 @@ function renderUsers() {
   `;
 }
 
-const PROFILES_MINI = [
-  { id:1, name:'Sophia Laurent', country:'France', photo:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop' },
-  { id:2, name:'Aiko Tanaka', country:'Japan', photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&h=200&fit=crop' },
-  { id:3, name:'Isabella Romano', country:'Italy', photo:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&h=200&fit=crop' },
-  { id:4, name:'Amara Diallo', country:'Senegal', photo:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&h=200&fit=crop' },
-  { id:5, name:'Emma Johansson', country:'Sweden', photo:'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=200&fit=crop' },
-  { id:6, name:'Zara Ahmed', country:'UAE', photo:'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=200&h=200&fit=crop' },
-  { id:7, name:'Yuna Park', country:'South Korea', photo:'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&h=200&fit=crop' },
-  { id:8, name:'Camila Reyes', country:'Colombia', photo:'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&h=200&fit=crop' },
-];
-
 function renderProfiles() {
   return `
   <div>
@@ -999,272 +981,133 @@ function renderProfiles() {
       <div class="page-title">Profile Management</div>
       <div style="font-size:12px;color:var(--muted);">50 profiles active</div>
     </div>
-    
-    <div class="profiles-grid-admin">
-      ${PROFILES_MINI.map(p => `
-      <div class="profile-admin-card">
-        <img class="profile-admin-photo" src="${p.photo}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop'">
-        <div class="profile-admin-body">
-          <div class="profile-admin-name">${p.name}</div>
-          <div class="profile-admin-meta">📍 ${p.country}</div>
-          <div class="profile-admin-actions">
-            <button class="action-btn edit" onclick="showProfileEdit(${p.id})">Edit Profile</button>
-            <button class="action-btn danger">Hide</button>
-          </div>
-        </div>
-      </div>
-      `).join('')}
-    </div>
-    
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;color:var(--muted);">
-      <div style="font-size:24px;margin-bottom:8px;">🌍</div>
-      <div style="font-size:13px;">50 total profiles loaded. Showing preview of first 8.</div>
-      <div style="font-size:12px;margin-top:4px;">All profiles are managed via the AI chat backend.</div>
+    <div class="table-card">
+      <table>
+        <thead><tr><th>Name</th><th>Country</th><th>Status</th><th>Views</th><th>Matches</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">Profile data coming soon</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
   `;
 }
 
 function renderTransactions() {
-  const total = adminState.transactions.filter(t=>t.status==='completed').reduce((a,t)=>a+t.amount,0);
-  
   return `
   <div>
     <div class="page-header">
-      <div class="page-title">M-Pesa Transactions</div>
-      <div style="font-weight:700;color:var(--success);">Total: KSh ${total}</div>
+      <div class="page-title">Transaction Management</div>
+      <div style="font-size:12px;color:var(--muted);">All payment records</div>
     </div>
-    
     <div class="table-card">
       <table>
-        <thead>
-          <tr>
-            <th>Transaction ID</th>
-            <th>User</th>
-            <th>Phone</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Reference</th>
-            <th>Time</th>
-          </tr>
-        </thead>
+        <thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody>
+          ${adminState.transactions.length === 0 ? `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted);">No transactions yet</td></tr>` : ''}
           ${adminState.transactions.map(t => `
           <tr>
-            <td style="font-family:monospace;font-size:12px;color:var(--accent2);">${t.id}</td>
-            <td style="font-weight:600;">${t.user}</td>
-            <td style="font-size:12px;color:var(--muted);">${t.phone}</td>
-            <td style="font-weight:700;color:var(--success);">KSh ${t.amount}</td>
+            <td>${t.user}</td>
+            <td style="font-weight:600;">KSh ${t.amount}</td>
+            <td>${t.method || 'M-Pesa'}</td>
             <td><span class="status-badge ${t.status==='completed'?'active':'inactive'}">${t.status}</span></td>
-            <td style="font-family:monospace;font-size:11px;color:var(--muted);">${t.ref}</td>
-            <td style="font-size:12px;color:var(--muted);">${formatAdminTime(t.time)}</td>
+            <td>${formatAdminTime(t.date)}</td>
+            <td><button class="action-btn edit">Details</button></td>
           </tr>
           `).join('')}
         </tbody>
       </table>
-    </div>
-    
-    <div style="background:rgba(5,150,105,0.05);border:1px solid rgba(5,150,105,0.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;">
-      <div style="font-size:24px;">ℹ️</div>
-      <div>
-        <div style="font-weight:600;font-size:13px;">M-Pesa Integration Status</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:3px;">
-          Sandbox mode active. Consumer Key: LSWFnjLukSjd...  · Short Code: 174379 (Sandbox Default)
-          <br>Real transactions will appear here once production keys are configured.
-        </div>
-      </div>
     </div>
   </div>
   `;
 }
 
 function renderAnalytics(revenue) {
-  const avgMsg = adminState.users.reduce((a,u)=>a+u.msgCount,0) / adminState.users.length;
-  const convRate = (adminState.users.filter(u=>u.unlockedCount>0).length / adminState.users.length * 100).toFixed(0);
-  
   return `
   <div>
     <div class="page-header">
       <div class="page-title">Analytics & Insights</div>
+      <div style="font-size:12px;color:var(--muted);">Platform metrics</div>
     </div>
-    
     <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value">${adminState.users.length}</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-change">▲ Growth</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💬</div>
+        <div class="stat-value">${Object.keys(adminState.conversations).length}</div>
+        <div class="stat-label">Conversations</div>
+        <div class="stat-change">▲ Active</div>
+      </div>
       <div class="stat-card">
         <div class="stat-icon">💰</div>
         <div class="stat-value">KSh ${revenue}</div>
         <div class="stat-label">Total Revenue</div>
+        <div class="stat-change">▲ Monthly</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">🔄</div>
-        <div class="stat-value">${convRate}%</div>
-        <div class="stat-label">Conversion Rate</div>
-        <div class="stat-change">Users who paid</div>
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value">4.8</div>
+        <div class="stat-label">Avg Rating</div>
+        <div class="stat-change">▲ From users</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">📊</div>
-        <div class="stat-value">${avgMsg.toFixed(1)}</div>
-        <div class="stat-label">Avg Messages/User</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon">🌍</div>
-        <div class="stat-value">50</div>
-        <div class="stat-label">Active Profiles</div>
-        <div class="stat-change">Across 40+ countries</div>
-      </div>
-    </div>
-    
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:20px;">
-      <div style="font-weight:600;margin-bottom:20px;">Revenue Breakdown</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-        <div style="text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:var(--success);">KSh ${revenue}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Total Collected</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:var(--accent2);">${adminState.transactions.filter(t=>t.status==='completed').length}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Successful Payments</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:24px;font-weight:700;color:var(--danger);">${adminState.transactions.filter(t=>t.status==='failed').length}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Failed Payments</div>
-        </div>
-      </div>
-    </div>
-    
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;">
-      <div style="font-weight:600;margin-bottom:16px;">Top Performing Profiles</div>
-      ${['Sophia Laurent (France)', 'Yuna Park (South Korea)', 'Priya Sharma (India)', 'Amara Diallo (Senegal)', 'Isabella Romano (Italy)'].map((name,i) => `
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div style="font-size:16px;font-weight:800;color:var(--border);width:24px;">${i+1}</div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:500;">${name}</div>
-          <div style="background:var(--border);border-radius:100px;height:4px;margin-top:6px;overflow:hidden;">
-            <div style="background:linear-gradient(90deg,var(--accent),var(--accent2));height:100%;width:${90-(i*15)}%;border-radius:100px;"></div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:var(--accent2);font-weight:600;">${90-(i*15)}%</div>
-      </div>
-      `).join('')}
     </div>
   </div>
   `;
 }
 
 function renderModal() {
+  if (!adminState.modal) return '';
   const m = adminState.modal;
   
-  if (m.type === 'editBalance') {
-    const user = adminState.users.find(u=>u.id===m.userId);
-    return `
-    <div class="modal-overlay" onclick="adminState.modal=null;render()">
-      <div class="modal-card" onclick="event.stopPropagation()">
-        <div class="modal-title">Edit Balance — ${user.name}</div>
-        <div class="input-group">
-          <label class="input-label">New Balance (USD)</label>
-          <input type="number" class="form-input" id="modal-balance" value="${user.balance}" step="0.01" min="0">
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;">This appears on the user's profile as their account balance.</div>
-        <div class="modal-actions">
-          <button class="btn-modal btn-cancel" onclick="adminState.modal=null;render()">Cancel</button>
-          <button class="btn-modal btn-confirm" onclick="saveBalance(${user.id})">Save Balance</button>
-        </div>
-      </div>
-    </div>
-    `;
-  }
-  
   if (m.type === 'editUser') {
-    const user = adminState.users.find(u=>u.id===m.userId);
     return `
     <div class="modal-overlay" onclick="adminState.modal=null;render()">
       <div class="modal-card" onclick="event.stopPropagation()">
-        <div class="modal-title">Edit User — ${user.name}</div>
+        <div class="modal-title">Edit User</div>
         <div class="input-group">
-          <label class="input-label">Full Name</label>
-          <input type="text" class="form-input" id="modal-name" value="${user.name}">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Email</label>
-          <input type="email" class="form-input" id="modal-email" value="${user.email}">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Phone</label>
-          <input type="tel" class="form-input" id="modal-phone" value="${user.phone}">
+          <label class="input-label">User ID</label>
+          <input class="form-input" readonly value="${m.data.id}">
         </div>
         <div class="modal-actions">
           <button class="btn-modal btn-cancel" onclick="adminState.modal=null;render()">Cancel</button>
-          <button class="btn-modal btn-confirm" onclick="saveUser(${user.id})">Save Changes</button>
+          <button class="btn-modal btn-confirm" onclick="adminState.modal=null;render()">Save</button>
         </div>
       </div>
     </div>
     `;
   }
-  
-  if (m.type === 'editProfile') {
-    const p = m.profile;
-    return `
-    <div class="modal-overlay" onclick="adminState.modal=null;render()">
-      <div class="modal-card" onclick="event.stopPropagation()" style="max-width:520px;">
-        <div class="modal-title">Edit Profile — ${p.name}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div class="input-group">
-            <label class="input-label">Name</label>
-            <input type="text" class="form-input" id="ep-name" value="${p.name}">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Age</label>
-            <input type="number" class="form-input" id="ep-age" value="${p.age}" min="18" max="60">
-          </div>
-          <div class="input-group">
-            <label class="input-label">City</label>
-            <input type="text" class="form-input" id="ep-city" value="${p.city}">
-          </div>
-          <div class="input-group">
-            <label class="input-label">Country</label>
-            <input type="text" class="form-input" id="ep-country" value="${p.country}">
-          </div>
-        </div>
-        <div class="input-group" style="margin-top:4px;">
-          <label class="input-label">Bio</label>
-          <textarea class="form-input" id="ep-bio" rows="3" style="resize:vertical;">${p.bio}</textarea>
-        </div>
-        <div class="input-group">
-          <label class="input-label">Interests (comma separated)</label>
-          <input type="text" class="form-input" id="ep-interests" value="${p.interests}">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Photo URL</label>
-          <input type="text" class="form-input" id="ep-photo" value="${p.photo}">
-        </div>
-        <div class="modal-actions">
-          <button class="btn-modal btn-cancel" onclick="adminState.modal=null;render()">Cancel</button>
-          <button class="btn-modal btn-confirm" onclick="saveProfileEdit(${p.id})">Save Profile</button>
-        </div>
-      </div>
-    </div>
-    `;
-  }
-
   return '';
 }
 
 // ============================================================
-// ACTIONS
+// FUNCTIONS
 // ============================================================
 function doAdminLogin() {
-  const user = document.getElementById('admin-user')?.value;
-  const pass = document.getElementById('admin-pass')?.value;
+  const userInput = document.getElementById('admin-user').value;
+  const passInput = document.getElementById('admin-pass').value;
   
-  if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
-    adminState.view = 'dashboard';
+  if (userInput === ADMIN_CREDS.user && passInput === ADMIN_CREDS.pass) {
+    adminState.view = 'admin';
+    adminState.page = 'overview';
+    adminState.toast = '✅ Login successful';
     render();
   } else {
-    showAdminToast('Invalid credentials. Please try again.');
+    adminState.toast = '❌ Invalid credentials';
+    render();
   }
 }
 
 function doAdminLogout() {
   adminState.view = 'login';
+  adminState.users = [];
+  adminState.conversations = {};
+  adminState.transactions = [];
+  adminState.pendingUnlocks = [];
+  adminState.page = 'overview';
   render();
 }
 
@@ -1273,261 +1116,93 @@ function setPage(page) {
   render();
 }
 
+function bindAdminEvents() {
+  // Event binding can be added here as needed
+}
+
+function formatAdminTime(time) {
+  if (!time) return 'N/A';
+  return new Date(time).toLocaleTimeString();
+}
+
 function sendAdminReply() {
   const input = document.getElementById('admin-reply-input');
-  const text = input?.value?.trim();
-  if (!text || !adminState.activeConv) return;
-
+  if (!input || !input.value.trim()) return;
+  
   const conv = adminState.conversations[adminState.activeConv];
   if (!conv) return;
-
-  const newMsg = { role: 'assistant', content: text, time: new Date().toISOString() };
-  conv.messages.push(newMsg);
-
-  // Write reply back to localStorage so the user app picks it up instantly
-  try {
-    const key = adminState.activeConv;
-    const stored = JSON.parse(localStorage.getItem(key) || '{}');
-    stored.messages = conv.messages;
-    stored.lastUpdated = new Date().toISOString();
-    localStorage.setItem(key, JSON.stringify(stored));
-  } catch(e) { console.log('Storage write error:', e); }
-
+  
+  conv.messages.push({
+    role: 'admin',
+    content: input.value,
+    time: new Date().toISOString()
+  });
+  
   input.value = '';
-  showAdminToast('Reply sent!');
+  adminState.toast = '✅ Message sent';
   render();
 }
 
-function handleAdminKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
+function handleAdminKey(event) {
+  if (event.key === 'Enter' && event.ctrlKey) {
     sendAdminReply();
   }
 }
 
-function showEditBalance(userId) {
-  adminState.modal = { type: 'editBalance', userId };
-  render();
-}
-
 function showEditUser(userId) {
-  adminState.modal = { type: 'editUser', userId };
+  const user = adminState.users.find(u => u.id === userId);
+  if (!user) return;
+  adminState.modal = { type: 'editUser', data: user };
   render();
 }
 
-function showProfileEdit(profileId) {
-  // Pull profile data from the full PROFILES array in app (or PROFILES_MINI here)
-  const allProfiles = [
-    { id:1, name:'Sophia Laurent', age:27, country:'France', city:'Paris', bio:'Art curator by day, midnight baker by night. Passionate about contemporary art, French cinema, and weekend getaways.', interests:'Art, Cinema, Baking, Travel, Wine', photo:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop' },
-    { id:2, name:'Aiko Tanaka', age:24, country:'Japan', city:'Tokyo', bio:'Software engineer who loves matcha lattes. When not coding, exploring Tokyo hidden ramen spots or practicing kendo.', interests:'Tech, Anime, Kendo, Ramen, Manga', photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&h=200&fit=crop' },
-    { id:3, name:'Isabella Romano', age:29, country:'Italy', city:'Milan', bio:'Fashion designer with a love for vintage Vespa rides. Milan born and raised.', interests:'Fashion, Design, Travel, Food, Art', photo:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=200&h=200&fit=crop' },
-    { id:4, name:'Amara Diallo', age:26, country:'Senegal', city:'Dakar', bio:'Journalist and storyteller. Dakar is my muse. I write about African culture and music.', interests:'Journalism, Music, Culture, Football, Writing', photo:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&h=200&fit=crop' },
-    { id:5, name:'Emma Johansson', age:25, country:'Sweden', city:'Stockholm', bio:'Environmental scientist who hikes every weekend. Passionate about sustainability and Nordic design.', interests:'Environment, Hiking, Design, Yoga, Cooking', photo:'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=200&h=200&fit=crop' },
-    { id:6, name:'Zara Ahmed', age:28, country:'UAE', city:'Dubai', bio:'Architect designing the future of Dubai. Love photography, oud music, and finding the best Shawarma spots.', interests:'Architecture, Photography, Music, Travel, Food', photo:'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=200&h=200&fit=crop' },
-    { id:7, name:'Yuna Park', age:23, country:'South Korea', city:'Seoul', bio:'K-pop dancer and dance academy instructor. Seoul nights are electric! Training 6 days a week.', interests:'Dancing, K-pop, Food, Travel, Fitness', photo:'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=200&h=200&fit=crop' },
-    { id:8, name:'Camila Reyes', age:31, country:'Colombia', city:'Medellin', bio:'Entrepreneur and coffee farmers daughter. Running my own eco-tourism startup. Salsa is non-negotiable.', interests:'Business, Salsa, Coffee, Travel, Nature', photo:'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&h=200&fit=crop' },
-  ];
-  const p = allProfiles.find(x=>x.id===profileId) || allProfiles[0];
-  adminState.modal = { type: 'editProfile', profile: JSON.parse(JSON.stringify(p)) };
-  render();
+function showEditBalance(userId) {
+  const user = adminState.users.find(u => u.id === userId);
+  if (!user) return;
+  const newBalance = prompt('Enter new balance (USD):', user.balance);
+  if (newBalance !== null) {
+    user.balance = parseFloat(newBalance) || 0;
+    adminState.toast = '✅ Balance updated';
+    render();
+  }
 }
 
-function confirmUnlock(index) {
-  const pending = adminState.pendingUnlocks[index];
-  if (!pending) return;
-
-  // Grant access in admin state
-  adminState.unlockedUsers[pending.userId] = true;
-
-  // Write unlock to localStorage so user's app polling picks it up
-  try {
-    const unlocks = JSON.parse(localStorage.getItem('cg_unlocked_users') || '{}');
-    unlocks[pending.userId] = true;
-    localStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
-
-    // Remove from pending unlocks in localStorage
-    const stored = JSON.parse(localStorage.getItem('cg_pending_unlocks') || '[]');
-    const updated = stored.filter(p => p.userId !== pending.userId);
-    localStorage.setItem('cg_pending_unlocks', JSON.stringify(updated));
-  } catch(e) {}
-
-  // Log as completed transaction
-  adminState.transactions.unshift({
-    id: 'TXN' + String(adminState.transactions.length + 1).padStart(3,'0'),
-    user: pending.userName,
-    phone: '+254' + pending.phone,
-    amount: 100,
-    currency: 'KES',
-    status: 'completed',
-    ref: 'CG-' + pending.userName.split(' ')[0].toUpperCase() + '-' + Date.now(),
-    time: new Date()
-  });
-
-  adminState.pendingUnlocks.splice(index, 1);
-  showAdminToast('Unlocked ' + pending.userName + ' successfully!');
-  render();
-}
-
-function rejectUnlock(index) {
-  const pending = adminState.pendingUnlocks[index];
-  if (!pending) return;
-  adminState.pendingUnlocks.splice(index, 1);
-  showAdminToast(`✕ Payment rejected for ${pending.userName}`);
+function toggleUserStatus(userId) {
+  const user = adminState.users.find(u => u.id === userId);
+  if (!user) return;
+  user.status = user.status === 'active' ? 'suspended' : 'active';
+  adminState.toast = `✅ User ${user.status}`;
   render();
 }
 
 function grantAccess(userId) {
   adminState.unlockedUsers[userId] = true;
-  try {
-    const unlocks = JSON.parse(localStorage.getItem('cg_unlocked_users') || '{}');
-    unlocks[userId] = true;
-    localStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
-  } catch(e) {}
-  const user = adminState.users.find(u=>u.id===userId);
-  showAdminToast('Full access granted to ' + (user?.name || userId));
+  adminState.toast = '✅ Access granted';
   render();
 }
 
 function revokeAccess(userId) {
-  delete adminState.unlockedUsers[userId];
-  try {
-    const unlocks = JSON.parse(localStorage.getItem('cg_unlocked_users') || '{}');
-    delete unlocks[userId];
-    localStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
-  } catch(e) {}
-  const user = adminState.users.find(u=>u.id===userId);
-  showAdminToast('Access revoked for ' + (user?.name || userId));
+  adminState.unlockedUsers[userId] = false;
+  adminState.toast = '✅ Access revoked';
   render();
 }
 
-function saveBalance(userId) {
-  const balance = parseFloat(document.getElementById('modal-balance')?.value || 0);
-  const user = adminState.users.find(u=>u.id===userId);
-  if (user) {
-    user.balance = balance;
-    showAdminToast(`✅ Balance updated to $${balance.toFixed(2)} for ${user.name}`);
-  }
-  adminState.modal = null;
+function confirmUnlock(index) {
+  const unlock = adminState.pendingUnlocks[index];
+  if (!unlock) return;
+  adminState.unlockedUsers[unlock.userId] = true;
+  adminState.pendingUnlocks.splice(index, 1);
+  adminState.toast = `✅ ${unlock.userName} unlocked`;
   render();
 }
 
-function saveUser(userId) {
-  const name = document.getElementById('modal-name')?.value;
-  const email = document.getElementById('modal-email')?.value;
-  const phone = document.getElementById('modal-phone')?.value;
-  const user = adminState.users.find(u=>u.id===userId);
-  if (user) {
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    showAdminToast(`✅ User ${user.name} updated`);
-  }
-  adminState.modal = null;
+function rejectUnlock(index) {
+  adminState.pendingUnlocks.splice(index, 1);
+  adminState.toast = '❌ Unlock rejected';
   render();
 }
 
-function toggleUserStatus(userId) {
-  const user = adminState.users.find(u=>u.id===userId);
-  if (user) {
-    user.status = user.status === 'active' ? 'inactive' : 'active';
-    showAdminToast(`✅ User ${user.name} ${user.status}`);
-    render();
-  }
-}
-
-function saveProfileEdit(profileId) {
-  const name = document.getElementById('ep-name')?.value?.trim();
-  const age = document.getElementById('ep-age')?.value;
-  const city = document.getElementById('ep-city')?.value?.trim();
-  const country = document.getElementById('ep-country')?.value?.trim();
-  const bio = document.getElementById('ep-bio')?.value?.trim();
-  const interests = document.getElementById('ep-interests')?.value?.trim();
-  const photo = document.getElementById('ep-photo')?.value?.trim();
-
-  // Save edits to localStorage so app.html picks them up
-  try {
-    const edits = JSON.parse(localStorage.getItem('cg_profile_edits') || '{}');
-    edits[profileId] = { name, age: parseInt(age), city, country, bio, interests, photo };
-    localStorage.setItem('cg_profile_edits', JSON.stringify(edits));
-  } catch(e) {}
-
-  showAdminToast(`Profile for ${name} saved!`);
-  adminState.modal = null;
-  render();
-}
-
-function loadFromStorage() {
-  // Load conversations from localStorage
-  try {
-    const index = JSON.parse(localStorage.getItem('cg_conv_index') || '[]');
-    index.forEach(key => {
-      const conv = JSON.parse(localStorage.getItem(key) || 'null');
-      if (conv && conv.messages && conv.messages.length > 0) {
-        adminState.conversations[key] = conv;
-        // Register user if not already in list
-        const exists = adminState.users.find(u => u.email === conv.userEmail);
-        if (!exists) {
-          adminState.users.push({
-            id: adminState.users.length + 1,
-            name: conv.userName,
-            email: conv.userEmail,
-            phone: 'N/A',
-            joined: new Date().toLocaleDateString(),
-            status: 'active',
-            balance: 0,
-            msgCount: conv.messages.filter(m=>m.role==='user').length,
-            unlockedCount: 0,
-            lastActive: 'Just now'
-          });
-        } else {
-          exists.msgCount = conv.messages.filter(m=>m.role==='user').length;
-          exists.lastActive = 'Recently';
-        }
-      }
-    });
-  } catch(e) { console.log('Load error:', e); }
-
-  // Load pending unlocks from localStorage
-  try {
-    const pending = JSON.parse(localStorage.getItem('cg_pending_unlocks') || '[]');
-    pending.forEach(p => {
-      const alreadyIn = adminState.pendingUnlocks.find(x => x.userId === p.userId);
-      if (!alreadyIn) adminState.pendingUnlocks.push(p);
-    });
-  } catch(e) {}
-}
-
-// Poll localStorage every 4 seconds for new messages and pending unlocks
-setInterval(() => {
-  const prevConvCount = Object.keys(adminState.conversations).length;
-  const prevPendingCount = adminState.pendingUnlocks.length;
-  loadFromStorage();
-  const newConvCount = Object.keys(adminState.conversations).length;
-  const newPendingCount = adminState.pendingUnlocks.length;
-  if (newConvCount !== prevConvCount || newPendingCount !== prevPendingCount) {
-    render();
-  }
-}, 4000);
-
-function showAdminToast(msg) {
-  adminState.toast = msg;
-}
-
-function formatAdminTime(date) {
-  if (!date) return '';
-  const d = new Date(date);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000) return 'Just now';
-  if (diff < 3600000) return Math.floor(diff/60000) + ' mins ago';
-  if (diff < 86400000) return Math.floor(diff/3600000) + ' hours ago';
-  return d.toLocaleDateString();
-}
-
-function bindAdminEvents() {}
-
-// INIT
-loadFromStorage();
+// Initialize
 render();
 </script>
 </body>

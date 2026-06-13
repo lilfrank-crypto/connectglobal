@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>ConnectGlobal — Meet People From Around the World</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
@@ -145,6 +146,8 @@
   .app-layout {
     display: flex;
     min-height: 100vh;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   /* SIDEBAR NAV */
@@ -232,6 +235,8 @@
     margin-left: 72px;
     flex: 1;
     min-height: 100vh;
+    width: calc(100% - 72px);
+    overflow-x: hidden;
   }
 
   /* PAGE HEADER */
@@ -279,10 +284,10 @@
 
   /* PROFILES GRID */
   .profiles-grid {
-    padding: 0 32px 32px;
+    padding: 0 16px 32px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
   }
 
   .profile-card {
@@ -303,8 +308,11 @@
 
   .profile-card-photo {
     width: 100%;
-    aspect-ratio: 4/5;
+    aspect-ratio: 3/4;
     object-fit: cover;
+    display: block;
+    background: var(--surface2);
+    min-height: 160px;
   }
 
   .profile-card-body { padding: 14px; }
@@ -350,15 +358,16 @@
 
   .verified-badge {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     background: rgba(16,185,129,0.9);
     border-radius: 100px;
-    padding: 3px 8px;
-    font-size: 11px;
+    padding: 3px 7px;
+    font-size: 10px;
     font-weight: 600;
     color: white;
     backdrop-filter: blur(4px);
+    white-space: nowrap;
   }
 
   /* MODAL */
@@ -884,15 +893,147 @@
   }
 
   /* MOBILE */
-  @media (max-width: 768px) {
-    .sidebar { width: 60px; }
-    .main-content { margin-left: 60px; }
-    .profiles-grid { grid-template-columns: repeat(2, 1fr); padding: 0 16px 24px; }
-    .page-header { padding: 16px 16px 0; }
-    .filters-bar { padding: 12px 16px; }
-    .chat-list { width: 260px; }
-    .dashboard-page, .profile-page { padding: 20px; }
+  /* ── TABLET ── */
+  @media (max-width: 900px) {
+    .profiles-grid { grid-template-columns: repeat(3, 1fr); }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
   }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+
+    /* Hide sidebar — use bottom nav instead */
+    .sidebar { display: none; }
+    .main-content { margin-left: 0; padding-bottom: 72px; width: 100%; max-width: 100vw; overflow-x: hidden; }
+
+    /* Bottom navigation bar */
+    .bottom-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      backdrop-filter: blur(12px);
+    }
+
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .bottom-nav-item.active { color: var(--accent2); }
+    .bottom-nav-item span.icon { font-size: 22px; }
+
+    .bottom-nav-badge {
+      position: absolute;
+      top: 4px; right: 10px;
+      width: 14px; height: 14px;
+      background: var(--danger);
+      border-radius: 50%;
+      font-size: 8px;
+      font-weight: 700;
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Auth card full width */
+    .auth-card { padding: 32px 24px; border-radius: 20px; }
+
+    /* Profile grid strict 2 columns, no overflow */
+    .profiles-grid {
+      grid-template-columns: repeat(2, 1fr);
+      padding: 0 10px 80px;
+      gap: 8px;
+    }
+
+    .page-header { padding: 14px 12px 0; }
+    .page-title { font-size: 18px; }
+    .filters-bar { padding: 8px 10px; gap: 6px; }
+    .filter-chip { padding: 6px 12px; font-size: 11px; }
+
+    /* Profile card compact */
+    .profile-card-name { font-size: 13px; }
+    .profile-card-meta { font-size: 11px; }
+    .profile-card-body { padding: 10px; }
+
+    /* Modal full screen on mobile */
+    .modal-overlay { padding: 0; align-items: flex-end; }
+    .modal-card {
+      border-radius: 24px 24px 0 0;
+      max-height: 92vh;
+      width: 100%;
+    }
+    .modal-photo { height: 260px; border-radius: 24px 24px 0 0; }
+    .modal-name { font-size: 22px; }
+
+    /* Chat full screen on mobile */
+    .chat-layout { flex-direction: column; height: calc(100vh - 64px); }
+    .chat-list {
+      width: 100%;
+      height: 100%;
+      border-right: none;
+      border-bottom: none;
+      display: block;
+    }
+    .chat-list.hidden { display: none; }
+    .chat-window { height: 100%; }
+    .chat-window.hidden { display: none; }
+
+    /* Back button for chat on mobile */
+    .chat-back-btn {
+      display: flex !important;
+      align-items: center;
+      gap: 8px;
+      background: none;
+      border: none;
+      color: var(--accent2);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      padding: 0;
+    }
+
+    /* Dashboard */
+    .dashboard-page { padding: 16px 14px 80px; }
+    .profile-page { padding: 16px 14px 80px; }
+
+    .balance-card { padding: 22px 20px; }
+    .balance-amount { font-size: 32px; }
+
+    /* Stats grid 2 col on mobile */
+    .stats-grid-mobile { grid-template-columns: repeat(2, 1fr) !important; }
+
+    /* Paywall modal */
+    .paywall-modal { border-radius: 24px 24px 0 0; padding: 32px 24px; }
+
+    /* Form section */
+    .form-section { padding: 18px; }
+    .profile-hero { flex-direction: column; text-align: center; padding: 24px; }
+    .profile-hero-photo { width: 80px; height: 80px; }
+  }
+
+  /* Hide bottom nav on desktop */
+  .bottom-nav { display: none; }
+  .chat-back-btn { display: none; }
 </style>
 </head>
 <body>
@@ -904,57 +1045,106 @@
 // DATA STORE
 // ============================================================
 const PROFILES = [
-  { id:1, name:"Sophia Laurent", age:27, country:"France", city:"Paris", photo:"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop", online:true, verified:true, bio:"Art curator by day, midnight baker by night 🥐 Passionate about contemporary art, French cinema, and weekend getaways to Provence. Looking to connect with curious souls from around the world!", interests:["Art","Cinema","Baking","Travel","Wine"], height:"5'6\"", work:"Art Curator", followers:2841, following:312, posts:89 },
-  { id:2, name:"Aiko Tanaka", age:24, country:"Japan", city:"Tokyo", photo:"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop", online:true, verified:true, bio:"Software engineer who loves matcha lattes ☕ When I'm not coding, you'll find me exploring Tokyo's hidden ramen spots or practicing kendo. Huge anime fan and aspiring manga artist!", interests:["Tech","Anime","Kendo","Ramen","Manga"], height:"5'2\"", work:"Software Engineer", followers:5120, following:489, posts:156 },
-  { id:3, name:"Isabella Romano", age:29, country:"Italy", city:"Milan", photo:"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop", online:false, verified:true, bio:"Fashion designer with a love for vintage Vespa rides 🛵 Milan born and raised. My life revolves around runway shows, aperitivo hour, and weekend trips to Lake Como. Let's share stories!", interests:["Fashion","Design","Travel","Food","Art"], height:"5'7\"", work:"Fashion Designer", followers:8934, following:671, posts:234 },
-  { id:4, name:"Amara Diallo", age:26, country:"Senegal", city:"Dakar", photo:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop", online:true, verified:true, bio:"Journalist and storyteller 📝 Dakar is my muse. I write about African culture, music, and the untold stories of our generation. Also obsessed with Thiéboudienne and good debate!", interests:["Journalism","Music","Culture","Football","Writing"], height:"5'8\"", work:"Journalist", followers:3456, following:234, posts:112 },
-  { id:5, name:"Emma Johansson", age:25, country:"Sweden", city:"Stockholm", photo:"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop", online:true, verified:false, bio:"Environmental scientist who hikes every weekend 🏔️ Stockholm's nature is my playground. I'm passionate about sustainability, Nordic design, and very serious about my fika breaks!", interests:["Environment","Hiking","Design","Yoga","Cooking"], height:"5'9\"", work:"Environmental Scientist", followers:1876, following:445, posts:67 },
-  { id:6, name:"Zara Ahmed", age:28, country:"UAE", city:"Dubai", photo:"https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop", online:true, verified:true, bio:"Architect designing the future of Dubai 🏗️ My days are blueprints and my evenings are rooftop views over the skyline. Love photography, oud music, and finding the best Shawarma spots!", interests:["Architecture","Photography","Music","Travel","Food"], height:"5'5\"", work:"Architect", followers:6723, following:891, posts:178 },
-  { id:7, name:"Yuna Park", age:23, country:"South Korea", city:"Seoul", photo:"https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop", online:true, verified:true, bio:"K-pop dancer and dance academy instructor 💃 Seoul nights are electric! Training 6 days a week but always making time for street food tours in Gwangjang market. Life's short, dance more!", interests:["Dancing","K-pop","Food","Travel","Fitness"], height:"5'4\"", work:"Dance Instructor", followers:12400, following:567, posts:423 },
-  { id:8, name:"Camila Reyes", age:31, country:"Colombia", city:"Medellín", photo:"https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop", online:false, verified:true, bio:"Entrepreneur and coffee farmer's daughter ☕ Medellín transformed beautifully, and so have I. Running my own eco-tourism startup. Salsa is non-negotiable. Adventure is my love language!", interests:["Business","Salsa","Coffee","Travel","Nature"], height:"5'6\"", work:"Entrepreneur", followers:4521, following:789, posts:145 },
-  { id:9, name:"Priya Sharma", age:26, country:"India", city:"Mumbai", photo:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop", online:true, verified:true, bio:"Bollywood choreographer who moonlights as a chef 🎬 Between film sets and cooking experiments, I'm always chasing the next adventure. Music is my first language, Hindustani classical!", interests:["Dance","Bollywood","Cooking","Music","Yoga"], height:"5'4\"", work:"Choreographer", followers:9876, following:432, posts:312 },
-  { id:10, name:"Laila Hassan", age:27, country:"Egypt", city:"Cairo", photo:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop", online:true, verified:true, bio:"Egyptologist and history podcast host 🏛️ I spend my days at the Cairo Museum and my evenings recording history stories. Obsessed with telling the world about ancient wonders!", interests:["History","Podcasting","Travel","Books","Photography"], height:"5'5\"", work:"Egyptologist", followers:7234, following:345, posts:198 },
-  { id:11, name:"Mei Lin", age:25, country:"China", city:"Shanghai", photo:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=500&fit=crop&faces=1", online:false, verified:true, bio:"Digital artist and gaming enthusiast 🎮 Shanghai's art scene is booming and I'm here for it! Creating digital art, streaming on Bilibili, and finding the best Xiaolongbao joints!", interests:["Art","Gaming","Tech","Food","Photography"], height:"5'3\"", work:"Digital Artist", followers:15000, following:892, posts:567 },
-  { id:12, name:"Elena Popescu", age:29, country:"Romania", city:"Bucharest", photo:"https://images.unsplash.com/photo-1532107753086-8e99ec7a5ef9?w=400&h=500&fit=crop", online:true, verified:false, bio:"Travel photographer who's visited 62 countries 📸 Currently based in Bucharest but rarely home! My camera is my passport. Looking for travel buddies and fellow adventurers!", interests:["Photography","Travel","Adventure","Culture","Writing"], height:"5'7\"", work:"Photographer", followers:23100, following:1200, posts:891 },
-  { id:13, name:"Nadia Okonkwo", age:28, country:"Nigeria", city:"Lagos", photo:"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop", online:true, verified:true, bio:"Investment banker who writes Afrobeats lyrics on the side 🎵 Lagos never sleeps, neither do I! By day I move markets, by night I move dance floors. Jollof rice debates welcome!", interests:["Finance","Music","Dance","Fashion","Food"], height:"5'8\"", work:"Investment Banker", followers:4800, following:567, posts:134 },
-  { id:14, name:"Hana Muller", age:24, country:"Germany", city:"Berlin", photo:"https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?w=400&h=500&fit=crop", online:true, verified:true, bio:"Electronic music producer and yoga teacher 🎧 Berlin's underground scene is my home. Studio by night, yoga mat by morning. Minimal techno, green smoothies, and late sunsets!", interests:["Music","Yoga","DJing","Travel","Meditation"], height:"5'6\"", work:"Music Producer", followers:8900, following:678, posts:245 },
-  { id:15, name:"Valeria Moreau", age:30, country:"Brazil", city:"São Paulo", photo:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop", online:false, verified:true, bio:"Marine biologist protecting the Amazon 🌊 São Paulo girl but oceans are my real home. Diving, conservation advocacy, and making sure my açaí bowl is perfect every morning!", interests:["Marine Biology","Diving","Nature","Fitness","Cooking"], height:"5'5\"", work:"Marine Biologist", followers:6700, following:423, posts:189 },
-  { id:16, name:"Oksana Kovalenko", age:27, country:"Ukraine", city:"Kyiv", photo:"https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&h=500&fit=crop", online:true, verified:true, bio:"Ballet dancer and pastry chef-in-training 🩰 Kyiv's culture runs deep in my bones. On stage I'm a swan, in the kitchen I'm a disaster. I wouldn't have it any other way!", interests:["Ballet","Cooking","Art","Literature","Fashion"], height:"5'8\"", work:"Ballerina", followers:11200, following:389, posts:278 },
-  { id:17, name:"Fatima Al-Rashidi", age:26, country:"Morocco", city:"Marrakech", photo:"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop", online:true, verified:true, bio:"Perfumer crafting the scents of Marrakech 🌹 My family has made traditional attar for five generations. Science meets art in my lab. Also an avid ceramicist and souk explorer!", interests:["Perfumery","Ceramics","Art","Culture","Travel"], height:"5'4\"", work:"Perfumer", followers:3400, following:278, posts:112 },
-  { id:18, name:"Akira Sato", age:28, country:"Japan", city:"Osaka", photo:"https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop&sat=-50", online:false, verified:true, bio:"Sushi chef turned YouTuber 🍣 Osaka's food culture is the greatest on Earth — fight me. I make tutorials on traditional Japanese cooking. Also secretly great at karaoke!", interests:["Cooking","YouTube","Gaming","Anime","Football"], height:"5'9\"", work:"Chef / Content Creator", followers:45000, following:234, posts:567 },
-  { id:19, name:"Ingrid Svensson", age:25, country:"Norway", city:"Oslo", photo:"https://images.unsplash.com/photo-1508243771214-6e95d137426b?w=400&h=500&fit=crop", online:true, verified:false, bio:"Olympic swimmer and marine conservationist 🏊 The Norwegian fjords shaped me. Training for the next games while also fighting to keep our oceans clean. Coffee is fuel, water is life!", interests:["Swimming","Conservation","Fitness","Nature","Travel"], height:"5'10\"", work:"Professional Athlete", followers:34000, following:567, posts:234 },
-  { id:20, name:"Mia Kowalski", age:27, country:"Poland", city:"Warsaw", photo:"https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&h=500&fit=crop", online:true, verified:true, bio:"Game developer by day, LARP organizer by weekend ⚔️ Warsaw's gaming scene is my kingdom. Building the next indie hit and organizing the biggest medieval LARP in Eastern Europe!", interests:["Gaming","LARP","Tech","Fantasy","History"], height:"5'5\"", work:"Game Developer", followers:7800, following:890, posts:345 },
-  { id:21, name:"Ayasha Bright Cloud", age:29, country:"Canada", city:"Vancouver", photo:"https://images.unsplash.com/photo-1504593811423-6dd665756598?w=400&h=500&fit=crop", online:true, verified:true, bio:"Indigenous rights lawyer and pow-wow dancer 🦅 Vancouver's mountains inspire my advocacy. Fighting for Indigenous communities in court, honoring ancestors on the dance floor!", interests:["Law","Culture","Dancing","Nature","Activism"], height:"5'7\"", work:"Lawyer", followers:9200, following:445, posts:201 },
-  { id:22, name:"Rania Mansour", age:26, country:"Lebanon", city:"Beirut", photo:"https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=400&h=500&fit=crop", online:true, verified:true, bio:"Architect rebuilding Beirut one blueprint at a time 🏛️ My city is resilient, and so am I. Architecture, street art, and hummus debates fuel my days. Beirut will rise again!", interests:["Architecture","Art","Travel","Music","Food"], height:"5'5\"", work:"Architect", followers:5600, following:678, posts:167 },
-  { id:23, name:"Chiara Esposito", age:24, country:"Italy", city:"Naples", photo:"https://images.unsplash.com/photo-1541101767792-f9b2b1c4f127?w=400&h=500&fit=crop", online:false, verified:false, bio:"Neapolitan pizza chef and world pizza champion 🍕 Yes, I have won awards for making the world's best Margherita. No, I won't share the secret recipe. Vesuvio view is mandatory!", interests:["Cooking","Food","History","Football","Travel"], height:"5'4\"", work:"Executive Chef", followers:18700, following:345, posts:456 },
-  { id:24, name:"Leila Ahmadi", age:28, country:"Iran", city:"Tehran", photo:"https://images.unsplash.com/photo-1513379733131-47fc74b45fc7?w=400&h=500&fit=crop", online:true, verified:true, bio:"Poet and calligraphy artist 🖋️ Persian poetry runs in my veins. Rumi is my daily companion. Creating art that bridges the ancient and modern. Tea ceremonies are sacred!", interests:["Poetry","Calligraphy","Art","Literature","Music"], height:"5'5\"", work:"Artist & Poet", followers:12400, following:567, posts:289 },
-  { id:25, name:"Sana Kovács", age:26, country:"Hungary", city:"Budapest", photo:"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=500&fit=crop", online:true, verified:true, bio:"Thermal spa architect and folk music enthusiast 🎵 Budapest is the most underrated city in Europe! Designing sustainable spas by day, playing the hurdy-gurdy by night. Yes, really!", interests:["Architecture","Folk Music","Spas","History","Travel"], height:"5'6\"", work:"Architect", followers:3200, following:456, posts:123 },
-  { id:26, name:"Daniela Cruz", age:30, country:"Mexico", city:"Mexico City", photo:"https://images.unsplash.com/photo-1527203561188-dae1bc1a417f?w=400&h=500&fit=crop", online:true, verified:true, bio:"Muralist and Frida Kahlo scholar 🎨 CDMX's street art scene wouldn't be the same without me (I'm kidding, mostly). Creating large-scale murals and teaching art history at UNAM!", interests:["Mural Art","History","Teaching","Food","Photography"], height:"5'3\"", work:"Artist / Academic", followers:8900, following:567, posts:234 },
-  { id:27, name:"Keiko Watanabe", age:32, country:"Japan", city:"Kyoto", photo:"https://images.unsplash.com/photo-1532170579297-281918c8ae72?w=400&h=500&fit=crop", online:false, verified:true, bio:"Tea ceremony master and ikebana teacher 🍵 Kyoto's seasons guide my practice. Over 15 years studying the way of tea. Finding beauty in stillness, wabi-sabi in everyday moments!", interests:["Tea Ceremony","Ikebana","Meditation","Nature","Traditional Arts"], height:"5'3\"", work:"Tea Master / Teacher", followers:7800, following:234, posts:345 },
-  { id:28, name:"Ana Lima", age:24, country:"Brazil", city:"Rio de Janeiro", photo:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop", online:true, verified:true, bio:"Capoeira athlete and samba queen 💃 Copacabana sunrise is my alarm clock. Training capoeira 5 hours a day, samba school three nights a week. Carnaval is literally my Super Bowl!", interests:["Capoeira","Samba","Beach","Fitness","Music"], height:"5'7\"", work:"Martial Arts Athlete", followers:21000, following:890, posts:678 },
-  { id:29, name:"Yuki Nakamura", age:25, country:"Japan", city:"Sapporo", photo:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&sat=-20", online:true, verified:false, bio:"Ski instructor and ramen connoisseur 🎿 Hokkaido powder snow is the best in the world — that's a fact. Teaching skiing all winter, traveling all summer. Miso ramen is my religion!", interests:["Skiing","Travel","Food","Photography","Music"], height:"5'10\"", work:"Ski Instructor", followers:4500, following:678, posts:167 },
-  { id:30, name:"Asel Nurlanovna", age:27, country:"Kazakhstan", city:"Almaty", photo:"https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop", online:true, verified:true, bio:"Programmer and traditional horse rider 🐎 Almaty is the most stunning city with mountains as backdrop. Coding in Go, riding on weekends. Ancient Silk Road meets Silicon Valley!", interests:["Programming","Horse Riding","Nature","Tech","History"], height:"5'6\"", work:"Backend Developer", followers:3100, following:345, posts:89 },
-  { id:31, name:"Marta Fernandez", age:29, country:"Spain", city:"Barcelona", photo:"https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&h=500&fit=crop&hue=20", online:false, verified:true, bio:"Flamenco dancer and architect of feeling ❤️‍🔥 Barcelona pulses in my blood. Gaudi is my muse, flamenco is my soul. Performing worldwide but always returning to my Mediterranean home!", interests:["Flamenco","Architecture","Art","Travel","Food"], height:"5'6\"", work:"Dancer & Teacher", followers:13400, following:456, posts:389 },
-  { id:32, name:"Nina Osei", age:25, country:"Ghana", city:"Accra", photo:"https://images.unsplash.com/photo-1522073417234-e22b3e4b5f2b?w=400&h=500&fit=crop", online:true, verified:true, bio:"Fashion photographer capturing Accra's style revolution 📸 Ghana's fashion scene is having its moment and I'm documenting every bit of it. Black excellence in every frame!", interests:["Photography","Fashion","Culture","Travel","Music"], height:"5'7\"", work:"Fashion Photographer", followers:16800, following:789, posts:567 },
-  { id:33, name:"Astrid Berg", age:28, country:"Finland", city:"Helsinki", photo:"https://images.unsplash.com/photo-1527736947477-2790e28f3443?w=400&h=500&fit=crop", online:true, verified:false, bio:"UX designer and wild berry picker 🫐 Helsinki summers are magical and I spend them barefoot in the forest. Designing apps that feel human, sauna hopping, and eating too much lingonberry jam!", interests:["Design","Nature","UX","Coding","Hiking"], height:"5'7\"", work:"UX Designer", followers:5600, following:567, posts:178 },
-  { id:34, name:"Bianca Torres", age:27, country:"Portugal", city:"Lisbon", photo:"https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop", online:true, verified:true, bio:"Fado singer and maritime historian 🎶 Lisbon's saudade lives inside me. Singing fado in the Alfama district, researching Portugal's Age of Discovery. The sea calls to all of us!", interests:["Fado","Music","History","Travel","Ocean"], height:"5'5\"", work:"Singer / Historian", followers:9800, following:423, posts:234 },
-  { id:35, name:"Dara Kim", age:24, country:"South Korea", city:"Busan", photo:"https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?w=400&h=500&fit=crop", online:true, verified:true, bio:"Marine biologist and BTS-level karaoke enthusiast 🌊 Busan's ocean is my lab. Studying coral reef recovery while belting out K-pop every Friday night. Best of both worlds!", interests:["Marine Biology","Karaoke","K-pop","Beach","Science"], height:"5'4\"", work:"Marine Biologist", followers:7200, following:567, posts:198 },
-  { id:36, name:"Catalina Ionescu", age:30, country:"Romania", city:"Cluj", photo:"https://images.unsplash.com/photo-1558203728-00f45181dd84?w=400&h=500&fit=crop", online:false, verified:true, bio:"Data scientist and medieval castle explorer 🏰 Transylvania is home. Finding patterns in data, finding history in ruins. Cluj's tech scene is booming — I'm here for every byte!", interests:["Data Science","History","Travel","Music","Coding"], height:"5'6\"", work:"Data Scientist", followers:4100, following:345, posts:145 },
-  { id:37, name:"Alinta Watson", age:26, country:"Australia", city:"Sydney", photo:"https://images.unsplash.com/photo-1551292831-023188e78222?w=400&h=500&fit=crop", online:true, verified:true, bio:"Surf instructor and marine conservationist 🏄 Bondi Beach is my office. Teaching people to catch waves while fighting to keep our oceans plastic-free. Vegemite is an acquired taste!", interests:["Surfing","Conservation","Nature","Fitness","Travel"], height:"5'6\"", work:"Surf Instructor", followers:18200, following:789, posts:456 },
-  { id:38, name:"Yara El-Sayed", age:28, country:"Egypt", city:"Alexandria", photo:"https://images.unsplash.com/photo-1546961342-ea5f62d5a27a?w=400&h=500&fit=crop", online:true, verified:true, bio:"Classical pianist and Mediterranean soul 🎹 Alexandria sits between the sea and history. Performing Beethoven and Fairuz with equal passion. The Great Library lives in my heart!", interests:["Piano","Music","History","Art","Literature"], height:"5'5\"", work:"Concert Pianist", followers:8900, following:345, posts:267 },
-  { id:39, name:"Petra Novak", age:25, country:"Czech Republic", city:"Prague", photo:"https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&hue=-30", online:true, verified:false, bio:"Quantum physics PhD student and beer sommelier 🍺 Prague's genius is in its bridges and breweries! Studying quantum entanglement by day, rating craft beers by evening. Bohemian by choice!", interests:["Physics","Beer","History","Music","Cycling"], height:"5'6\"", work:"PhD Researcher", followers:3400, following:456, posts:112 },
-  { id:40, name:"Siosaia Taufa", age:27, country:"Tonga", city:"Nuku'alofa", photo:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop", online:true, verified:true, bio:"Rugby player and traditional tatau artist 🏉 Tonga's spirit is in my rugby boots and my tattoo needles. Representing Pacific culture on the field and on skin. Faka'apa'apa always!", interests:["Rugby","Traditional Arts","Culture","Fitness","Music"], height:"6'2\"", work:"Rugby Athlete / Artist", followers:12300, following:456, posts:345 },
-  { id:41, name:"Lena Hoffmann", age:26, country:"Germany", city:"Munich", photo:"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&hue=40", online:false, verified:true, bio:"Opera singer and Oktoberfest enthusiast 🎼 Bavaria runs in my blood. Performing Wagner and Strauss at the Munich Opera House while also genuinely loving a good pretzel and Weißbier!", interests:["Opera","Music","Beer Culture","Hiking","Travel"], height:"5'7\"", work:"Opera Singer", followers:9800, following:345, posts:234 },
-  { id:42, name:"Sofia Papadopoulos", age:29, country:"Greece", city:"Athens", photo:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=500&fit=crop&hue=30", online:true, verified:true, bio:"Archaeologist uncovering ancient Athens 🏺 The Acropolis is my daily inspiration. Restoring ancient pottery, teaching classical history, and defending Greek olive oil to the death!", interests:["Archaeology","History","Art","Cooking","Travel"], height:"5'5\"", work:"Archaeologist", followers:7600, following:456, posts:189 },
-  { id:43, name:"Tiffany Nguyen", age:24, country:"Vietnam", city:"Ho Chi Minh City", photo:"https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&hue=60", online:true, verified:true, bio:"Street food vlogger and motorbike adventurer 🛵 HCMC's streets have 9 million stories and I'm telling them all! My channel has 2M subscribers. The pho here will ruin all other pho for you!", interests:["Food","Vlogging","Travel","Motorbikes","Culture"], height:"5'2\"", work:"Content Creator", followers:2100000, following:567, posts:890 },
-  { id:44, name:"Vivienne Adeyemi", age:31, country:"Nigeria", city:"Abuja", photo:"https://images.unsplash.com/photo-1499952127939-9bbf5af6c51c?w=400&h=500&fit=crop", online:true, verified:true, bio:"Fashion designer dressing Africa's future 👗 My designs have appeared at Lagos Fashion Week three times. Ankara fabric is my paint, Lagos is my runway. Also breeding award-winning orchids!", interests:["Fashion","Design","Nature","Travel","Business"], height:"5'8\"", work:"Fashion Designer", followers:34000, following:789, posts:567 },
-  { id:45, name:"Hira Baig", age:26, country:"Pakistan", city:"Lahore", photo:"https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop&hue=-30", online:false, verified:true, bio:"Classical Kathak dancer and IT entrepreneur 💻 Lahore's art and tech scenes are both thriving. By day I code, by evening I dance 1000-year-old compositions. Duality is my superpower!", interests:["Kathak","Dance","Tech","Entrepreneurship","Art"], height:"5'4\"", work:"Dancer & Developer", followers:8900, following:567, posts:234 },
-  { id:46, name:"Ama Asante", age:25, country:"Ghana", city:"Kumasi", photo:"https://images.unsplash.com/photo-1527736947477-2790e28f3443?w=400&h=500&fit=crop&hue=-60", online:true, verified:false, bio:"Kente weaver and fashion sustainability activist 🧵 Kumasi is the heartland of Ashanti culture. Weaving traditional Kente cloth while pushing the fashion industry toward ethical practices!", interests:["Weaving","Fashion","Culture","Sustainability","Art"], height:"5'6\"", work:"Artisan / Activist", followers:5600, following:345, posts:189 },
-  { id:47, name:"Anika Müller", age:27, country:"Austria", city:"Vienna", photo:"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop&hue=90", online:true, verified:true, bio:"Concert violinist and coffeehouse philosopher ☕ Vienna's coffee houses are where great ideas are born. Performing with the Vienna Philharmonic and debating Wittgenstein over melange!", interests:["Violin","Classical Music","Philosophy","Coffee","Art"], height:"5'6\"", work:"Violinist", followers:14500, following:345, posts:312 },
-  { id:48, name:"Ekaterina Volkov", age:28, country:"Russia", city:"St. Petersburg", photo:"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&hue=-20", online:false, verified:true, bio:"Hermitage Museum curator and ice skating champion 🏛️ St. Petersburg's white nights inspire everything I do. Protecting Russian art heritage while absolutely dominating the ice rink!", interests:["Art Curation","Ice Skating","History","Literature","Ballet"], height:"5'7\"", work:"Museum Curator", followers:6700, following:456, posts:178 },
-  { id:49, name:"Jasmine Oduya", age:24, country:"UK", city:"London", photo:"https://images.unsplash.com/photo-1513379733131-47fc74b45fc7?w=400&h=500&fit=crop&hue=20", online:true, verified:true, bio:"NHS junior doctor and spoken word poet 🏥 Healing people at St. Thomas', healing souls at Poetry Slam. Born in Lagos, raised in London, heart in both. Tea is non-negotiable!", interests:["Medicine","Poetry","Culture","Music","Travel"], height:"5'5\"", work:"Junior Doctor / Poet", followers:7800, following:567, posts:145 },
-  { id:50, name:"Maria Santos", age:29, country:"Philippines", city:"Manila", photo:"https://images.unsplash.com/photo-1546961342-ea5f62d5a27a?w=400&h=500&fit=crop&hue=-10", online:true, verified:true, bio:"Marine archaeologist and free diver 🤿 The Philippines has 7,641 islands and I'm exploring every one. Discovering sunken Spanish galleons, free diving to 40m, and making killer adobo!", interests:["Archaeology","Diving","History","Cooking","Travel"], height:"5'3\"", work:"Marine Archaeologist", followers:11200, following:678, posts:389 }
+  { id:1, name:"Sophia Laurent", age:27, country:"France", city:"Paris", photo:"https://i.pravatar.cc/400?img=1", online:true, verified:true, bio:"Art curator by day, midnight baker by night 🥐 Passionate about contemporary art, French cinema, and weekend getaways to Provence. Looking to connect with curious souls from around the world!", interests:["Art","Cinema","Baking","Travel","Wine"], height:"5'6\"", work:"Art Curator", followers:2841, following:312, posts:89 },
+  { id:2, name:"Aiko Tanaka", age:24, country:"Japan", city:"Tokyo", photo:"https://i.pravatar.cc/400?img=2", online:true, verified:true, bio:"Software engineer who loves matcha lattes ☕ When I'm not coding, you'll find me exploring Tokyo's hidden ramen spots or practicing kendo. Huge anime fan and aspiring manga artist!", interests:["Tech","Anime","Kendo","Ramen","Manga"], height:"5'2\"", work:"Software Engineer", followers:5120, following:489, posts:156 },
+  { id:3, name:"Isabella Romano", age:29, country:"Italy", city:"Milan", photo:"https://i.pravatar.cc/400?img=3", online:false, verified:true, bio:"Fashion designer with a love for vintage Vespa rides 🛵 Milan born and raised. My life revolves around runway shows, aperitivo hour, and weekend trips to Lake Como. Let's share stories!", interests:["Fashion","Design","Travel","Food","Art"], height:"5'7\"", work:"Fashion Designer", followers:8934, following:671, posts:234 },
+  { id:4, name:"Amara Diallo", age:26, country:"Senegal", city:"Dakar", photo:"https://i.pravatar.cc/400?img=4", online:true, verified:true, bio:"Journalist and storyteller 📝 Dakar is my muse. I write about African culture, music, and the untold stories of our generation. Also obsessed with Thiéboudienne and good debate!", interests:["Journalism","Music","Culture","Football","Writing"], height:"5'8\"", work:"Journalist", followers:3456, following:234, posts:112 },
+  { id:5, name:"Emma Johansson", age:25, country:"Sweden", city:"Stockholm", photo:"https://i.pravatar.cc/400?img=5", online:true, verified:false, bio:"Environmental scientist who hikes every weekend 🏔️ Stockholm's nature is my playground. I'm passionate about sustainability, Nordic design, and very serious about my fika breaks!", interests:["Environment","Hiking","Design","Yoga","Cooking"], height:"5'9\"", work:"Environmental Scientist", followers:1876, following:445, posts:67 },
+  { id:6, name:"Zara Ahmed", age:28, country:"UAE", city:"Dubai", photo:"https://i.pravatar.cc/400?img=6", online:true, verified:true, bio:"Architect designing the future of Dubai 🏗️ My days are blueprints and my evenings are rooftop views over the skyline. Love photography, oud music, and finding the best Shawarma spots!", interests:["Architecture","Photography","Music","Travel","Food"], height:"5'5\"", work:"Architect", followers:6723, following:891, posts:178 },
+  { id:7, name:"Yuna Park", age:23, country:"South Korea", city:"Seoul", photo:"https://i.pravatar.cc/400?img=7", online:true, verified:true, bio:"K-pop dancer and dance academy instructor 💃 Seoul nights are electric! Training 6 days a week but always making time for street food tours in Gwangjang market. Life's short, dance more!", interests:["Dancing","K-pop","Food","Travel","Fitness"], height:"5'4\"", work:"Dance Instructor", followers:12400, following:567, posts:423 },
+  { id:8, name:"Camila Reyes", age:31, country:"Colombia", city:"Medellín", photo:"https://i.pravatar.cc/400?img=8", online:false, verified:true, bio:"Entrepreneur and coffee farmer's daughter ☕ Medellín transformed beautifully, and so have I. Running my own eco-tourism startup. Salsa is non-negotiable. Adventure is my love language!", interests:["Business","Salsa","Coffee","Travel","Nature"], height:"5'6\"", work:"Entrepreneur", followers:4521, following:789, posts:145 },
+  { id:9, name:"Priya Sharma", age:26, country:"India", city:"Mumbai", photo:"https://i.pravatar.cc/400?img=9", online:true, verified:true, bio:"Bollywood choreographer who moonlights as a chef 🎬 Between film sets and cooking experiments, I'm always chasing the next adventure. Music is my first language, Hindustani classical!", interests:["Dance","Bollywood","Cooking","Music","Yoga"], height:"5'4\"", work:"Choreographer", followers:9876, following:432, posts:312 },
+  { id:10, name:"Laila Hassan", age:27, country:"Egypt", city:"Cairo", photo:"https://i.pravatar.cc/400?img=10", online:true, verified:true, bio:"Egyptologist and history podcast host 🏛️ I spend my days at the Cairo Museum and my evenings recording history stories. Obsessed with telling the world about ancient wonders!", interests:["History","Podcasting","Travel","Books","Photography"], height:"5'5\"", work:"Egyptologist", followers:7234, following:345, posts:198 },
+  { id:11, name:"Mei Lin", age:25, country:"China", city:"Shanghai", photo:"https://i.pravatar.cc/400?img=11", online:false, verified:true, bio:"Digital artist and gaming enthusiast 🎮 Shanghai's art scene is booming and I'm here for it! Creating digital art, streaming on Bilibili, and finding the best Xiaolongbao joints!", interests:["Art","Gaming","Tech","Food","Photography"], height:"5'3\"", work:"Digital Artist", followers:15000, following:892, posts:567 },
+  { id:12, name:"Elena Popescu", age:29, country:"Romania", city:"Bucharest", photo:"https://i.pravatar.cc/400?img=12", online:true, verified:false, bio:"Travel photographer who's visited 62 countries 📸 Currently based in Bucharest but rarely home! My camera is my passport. Looking for travel buddies and fellow adventurers!", interests:["Photography","Travel","Adventure","Culture","Writing"], height:"5'7\"", work:"Photographer", followers:23100, following:1200, posts:891 },
+  { id:13, name:"Nadia Okonkwo", age:28, country:"Nigeria", city:"Lagos", photo:"https://i.pravatar.cc/400?img=13", online:true, verified:true, bio:"Investment banker who writes Afrobeats lyrics on the side 🎵 Lagos never sleeps, neither do I! By day I move markets, by night I move dance floors. Jollof rice debates welcome!", interests:["Finance","Music","Dance","Fashion","Food"], height:"5'8\"", work:"Investment Banker", followers:4800, following:567, posts:134 },
+  { id:14, name:"Hana Muller", age:24, country:"Germany", city:"Berlin", photo:"https://i.pravatar.cc/400?img=14", online:true, verified:true, bio:"Electronic music producer and yoga teacher 🎧 Berlin's underground scene is my home. Studio by night, yoga mat by morning. Minimal techno, green smoothies, and late sunsets!", interests:["Music","Yoga","DJing","Travel","Meditation"], height:"5'6\"", work:"Music Producer", followers:8900, following:678, posts:245 },
+  { id:15, name:"Valeria Moreau", age:30, country:"Brazil", city:"São Paulo", photo:"https://i.pravatar.cc/400?img=15", online:false, verified:true, bio:"Marine biologist protecting the Amazon 🌊 São Paulo girl but oceans are my real home. Diving, conservation advocacy, and making sure my açaí bowl is perfect every morning!", interests:["Marine Biology","Diving","Nature","Fitness","Cooking"], height:"5'5\"", work:"Marine Biologist", followers:6700, following:423, posts:189 },
+  { id:16, name:"Oksana Kovalenko", age:27, country:"Ukraine", city:"Kyiv", photo:"https://i.pravatar.cc/400?img=16", online:true, verified:true, bio:"Ballet dancer and pastry chef-in-training 🩰 Kyiv's culture runs deep in my bones. On stage I'm a swan, in the kitchen I'm a disaster. I wouldn't have it any other way!", interests:["Ballet","Cooking","Art","Literature","Fashion"], height:"5'8\"", work:"Ballerina", followers:11200, following:389, posts:278 },
+  { id:17, name:"Fatima Al-Rashidi", age:26, country:"Morocco", city:"Marrakech", photo:"https://i.pravatar.cc/400?img=17", online:true, verified:true, bio:"Perfumer crafting the scents of Marrakech 🌹 My family has made traditional attar for five generations. Science meets art in my lab. Also an avid ceramicist and souk explorer!", interests:["Perfumery","Ceramics","Art","Culture","Travel"], height:"5'4\"", work:"Perfumer", followers:3400, following:278, posts:112 },
+  { id:18, name:"Akira Sato", age:28, country:"Japan", city:"Osaka", photo:"https://i.pravatar.cc/400?img=18", online:false, verified:true, bio:"Sushi chef turned YouTuber 🍣 Osaka's food culture is the greatest on Earth — fight me. I make tutorials on traditional Japanese cooking. Also secretly great at karaoke!", interests:["Cooking","YouTube","Gaming","Anime","Football"], height:"5'9\"", work:"Chef / Content Creator", followers:45000, following:234, posts:567 },
+  { id:19, name:"Ingrid Svensson", age:25, country:"Norway", city:"Oslo", photo:"https://i.pravatar.cc/400?img=19", online:true, verified:false, bio:"Olympic swimmer and marine conservationist 🏊 The Norwegian fjords shaped me. Training for the next games while also fighting to keep our oceans clean. Coffee is fuel, water is life!", interests:["Swimming","Conservation","Fitness","Nature","Travel"], height:"5'10\"", work:"Professional Athlete", followers:34000, following:567, posts:234 },
+  { id:20, name:"Mia Kowalski", age:27, country:"Poland", city:"Warsaw", photo:"https://i.pravatar.cc/400?img=20", online:true, verified:true, bio:"Game developer by day, LARP organizer by weekend ⚔️ Warsaw's gaming scene is my kingdom. Building the next indie hit and organizing the biggest medieval LARP in Eastern Europe!", interests:["Gaming","LARP","Tech","Fantasy","History"], height:"5'5\"", work:"Game Developer", followers:7800, following:890, posts:345 },
+  { id:21, name:"Ayasha Bright Cloud", age:29, country:"Canada", city:"Vancouver", photo:"https://i.pravatar.cc/400?img=21", online:true, verified:true, bio:"Indigenous rights lawyer and pow-wow dancer 🦅 Vancouver's mountains inspire my advocacy. Fighting for Indigenous communities in court, honoring ancestors on the dance floor!", interests:["Law","Culture","Dancing","Nature","Activism"], height:"5'7\"", work:"Lawyer", followers:9200, following:445, posts:201 },
+  { id:22, name:"Rania Mansour", age:26, country:"Lebanon", city:"Beirut", photo:"https://i.pravatar.cc/400?img=22", online:true, verified:true, bio:"Architect rebuilding Beirut one blueprint at a time 🏛️ My city is resilient, and so am I. Architecture, street art, and hummus debates fuel my days. Beirut will rise again!", interests:["Architecture","Art","Travel","Music","Food"], height:"5'5\"", work:"Architect", followers:5600, following:678, posts:167 },
+  { id:23, name:"Chiara Esposito", age:24, country:"Italy", city:"Naples", photo:"https://i.pravatar.cc/400?img=23", online:false, verified:false, bio:"Neapolitan pizza chef and world pizza champion 🍕 Yes, I have won awards for making the world's best Margherita. No, I won't share the secret recipe. Vesuvio view is mandatory!", interests:["Cooking","Food","History","Football","Travel"], height:"5'4\"", work:"Executive Chef", followers:18700, following:345, posts:456 },
+  { id:24, name:"Leila Ahmadi", age:28, country:"Iran", city:"Tehran", photo:"https://i.pravatar.cc/400?img=24", online:true, verified:true, bio:"Poet and calligraphy artist 🖋️ Persian poetry runs in my veins. Rumi is my daily companion. Creating art that bridges the ancient and modern. Tea ceremonies are sacred!", interests:["Poetry","Calligraphy","Art","Literature","Music"], height:"5'5\"", work:"Artist & Poet", followers:12400, following:567, posts:289 },
+  { id:25, name:"Sana Kovács", age:26, country:"Hungary", city:"Budapest", photo:"https://i.pravatar.cc/400?img=25", online:true, verified:true, bio:"Thermal spa architect and folk music enthusiast 🎵 Budapest is the most underrated city in Europe! Designing sustainable spas by day, playing the hurdy-gurdy by night. Yes, really!", interests:["Architecture","Folk Music","Spas","History","Travel"], height:"5'6\"", work:"Architect", followers:3200, following:456, posts:123 },
+  { id:26, name:"Daniela Cruz", age:30, country:"Mexico", city:"Mexico City", photo:"https://i.pravatar.cc/400?img=26", online:true, verified:true, bio:"Muralist and Frida Kahlo scholar 🎨 CDMX's street art scene wouldn't be the same without me (I'm kidding, mostly). Creating large-scale murals and teaching art history at UNAM!", interests:["Mural Art","History","Teaching","Food","Photography"], height:"5'3\"", work:"Artist / Academic", followers:8900, following:567, posts:234 },
+  { id:27, name:"Keiko Watanabe", age:32, country:"Japan", city:"Kyoto", photo:"https://i.pravatar.cc/400?img=27", online:false, verified:true, bio:"Tea ceremony master and ikebana teacher 🍵 Kyoto's seasons guide my practice. Over 15 years studying the way of tea. Finding beauty in stillness, wabi-sabi in everyday moments!", interests:["Tea Ceremony","Ikebana","Meditation","Nature","Traditional Arts"], height:"5'3\"", work:"Tea Master / Teacher", followers:7800, following:234, posts:345 },
+  { id:28, name:"Ana Lima", age:24, country:"Brazil", city:"Rio de Janeiro", photo:"https://i.pravatar.cc/400?img=28", online:true, verified:true, bio:"Capoeira athlete and samba queen 💃 Copacabana sunrise is my alarm clock. Training capoeira 5 hours a day, samba school three nights a week. Carnaval is literally my Super Bowl!", interests:["Capoeira","Samba","Beach","Fitness","Music"], height:"5'7\"", work:"Martial Arts Athlete", followers:21000, following:890, posts:678 },
+  { id:29, name:"Yuki Nakamura", age:25, country:"Japan", city:"Sapporo", photo:"https://i.pravatar.cc/400?img=29", online:true, verified:false, bio:"Ski instructor and ramen connoisseur 🎿 Hokkaido powder snow is the best in the world — that's a fact. Teaching skiing all winter, traveling all summer. Miso ramen is my religion!", interests:["Skiing","Travel","Food","Photography","Music"], height:"5'10\"", work:"Ski Instructor", followers:4500, following:678, posts:167 },
+  { id:30, name:"Asel Nurlanovna", age:27, country:"Kazakhstan", city:"Almaty", photo:"https://i.pravatar.cc/400?img=30", online:true, verified:true, bio:"Programmer and traditional horse rider 🐎 Almaty is the most stunning city with mountains as backdrop. Coding in Go, riding on weekends. Ancient Silk Road meets Silicon Valley!", interests:["Programming","Horse Riding","Nature","Tech","History"], height:"5'6\"", work:"Backend Developer", followers:3100, following:345, posts:89 },
+  { id:31, name:"Marta Fernandez", age:29, country:"Spain", city:"Barcelona", photo:"https://i.pravatar.cc/400?img=31", online:false, verified:true, bio:"Flamenco dancer and architect of feeling ❤️‍🔥 Barcelona pulses in my blood. Gaudi is my muse, flamenco is my soul. Performing worldwide but always returning to my Mediterranean home!", interests:["Flamenco","Architecture","Art","Travel","Food"], height:"5'6\"", work:"Dancer & Teacher", followers:13400, following:456, posts:389 },
+  { id:32, name:"Nina Osei", age:25, country:"Ghana", city:"Accra", photo:"https://i.pravatar.cc/400?img=32", online:true, verified:true, bio:"Fashion photographer capturing Accra's style revolution 📸 Ghana's fashion scene is having its moment and I'm documenting every bit of it. Black excellence in every frame!", interests:["Photography","Fashion","Culture","Travel","Music"], height:"5'7\"", work:"Fashion Photographer", followers:16800, following:789, posts:567 },
+  { id:33, name:"Astrid Berg", age:28, country:"Finland", city:"Helsinki", photo:"https://i.pravatar.cc/400?img=33", online:true, verified:false, bio:"UX designer and wild berry picker 🫐 Helsinki summers are magical and I spend them barefoot in the forest. Designing apps that feel human, sauna hopping, and eating too much lingonberry jam!", interests:["Design","Nature","UX","Coding","Hiking"], height:"5'7\"", work:"UX Designer", followers:5600, following:567, posts:178 },
+  { id:34, name:"Bianca Torres", age:27, country:"Portugal", city:"Lisbon", photo:"https://i.pravatar.cc/400?img=34", online:true, verified:true, bio:"Fado singer and maritime historian 🎶 Lisbon's saudade lives inside me. Singing fado in the Alfama district, researching Portugal's Age of Discovery. The sea calls to all of us!", interests:["Fado","Music","History","Travel","Ocean"], height:"5'5\"", work:"Singer / Historian", followers:9800, following:423, posts:234 },
+  { id:35, name:"Dara Kim", age:24, country:"South Korea", city:"Busan", photo:"https://i.pravatar.cc/400?img=35", online:true, verified:true, bio:"Marine biologist and BTS-level karaoke enthusiast 🌊 Busan's ocean is my lab. Studying coral reef recovery while belting out K-pop every Friday night. Best of both worlds!", interests:["Marine Biology","Karaoke","K-pop","Beach","Science"], height:"5'4\"", work:"Marine Biologist", followers:7200, following:567, posts:198 },
+  { id:36, name:"Catalina Ionescu", age:30, country:"Romania", city:"Cluj", photo:"https://i.pravatar.cc/400?img=36", online:false, verified:true, bio:"Data scientist and medieval castle explorer 🏰 Transylvania is home. Finding patterns in data, finding history in ruins. Cluj's tech scene is booming — I'm here for every byte!", interests:["Data Science","History","Travel","Music","Coding"], height:"5'6\"", work:"Data Scientist", followers:4100, following:345, posts:145 },
+  { id:37, name:"Alinta Watson", age:26, country:"Australia", city:"Sydney", photo:"https://i.pravatar.cc/400?img=37", online:true, verified:true, bio:"Surf instructor and marine conservationist 🏄 Bondi Beach is my office. Teaching people to catch waves while fighting to keep our oceans plastic-free. Vegemite is an acquired taste!", interests:["Surfing","Conservation","Nature","Fitness","Travel"], height:"5'6\"", work:"Surf Instructor", followers:18200, following:789, posts:456 },
+  { id:38, name:"Yara El-Sayed", age:28, country:"Egypt", city:"Alexandria", photo:"https://i.pravatar.cc/400?img=38", online:true, verified:true, bio:"Classical pianist and Mediterranean soul 🎹 Alexandria sits between the sea and history. Performing Beethoven and Fairuz with equal passion. The Great Library lives in my heart!", interests:["Piano","Music","History","Art","Literature"], height:"5'5\"", work:"Concert Pianist", followers:8900, following:345, posts:267 },
+  { id:39, name:"Petra Novak", age:25, country:"Czech Republic", city:"Prague", photo:"https://i.pravatar.cc/400?img=39", online:true, verified:false, bio:"Quantum physics PhD student and beer sommelier 🍺 Prague's genius is in its bridges and breweries! Studying quantum entanglement by day, rating craft beers by evening. Bohemian by choice!", interests:["Physics","Beer","History","Music","Cycling"], height:"5'6\"", work:"PhD Researcher", followers:3400, following:456, posts:112 },
+  { id:40, name:"Siosaia Taufa", age:27, country:"Tonga", city:"Nuku'alofa", photo:"https://i.pravatar.cc/400?img=40", online:true, verified:true, bio:"Rugby player and traditional tatau artist 🏉 Tonga's spirit is in my rugby boots and my tattoo needles. Representing Pacific culture on the field and on skin. Faka'apa'apa always!", interests:["Rugby","Traditional Arts","Culture","Fitness","Music"], height:"6'2\"", work:"Rugby Athlete / Artist", followers:12300, following:456, posts:345 },
+  { id:41, name:"Lena Hoffmann", age:26, country:"Germany", city:"Munich", photo:"https://i.pravatar.cc/400?img=41", online:false, verified:true, bio:"Opera singer and Oktoberfest enthusiast 🎼 Bavaria runs in my blood. Performing Wagner and Strauss at the Munich Opera House while also genuinely loving a good pretzel and Weißbier!", interests:["Opera","Music","Beer Culture","Hiking","Travel"], height:"5'7\"", work:"Opera Singer", followers:9800, following:345, posts:234 },
+  { id:42, name:"Sofia Papadopoulos", age:29, country:"Greece", city:"Athens", photo:"https://i.pravatar.cc/400?img=42", online:true, verified:true, bio:"Archaeologist uncovering ancient Athens 🏺 The Acropolis is my daily inspiration. Restoring ancient pottery, teaching classical history, and defending Greek olive oil to the death!", interests:["Archaeology","History","Art","Cooking","Travel"], height:"5'5\"", work:"Archaeologist", followers:7600, following:456, posts:189 },
+  { id:43, name:"Tiffany Nguyen", age:24, country:"Vietnam", city:"Ho Chi Minh City", photo:"https://i.pravatar.cc/400?img=43", online:true, verified:true, bio:"Street food vlogger and motorbike adventurer 🛵 HCMC's streets have 9 million stories and I'm telling them all! My channel has 2M subscribers. The pho here will ruin all other pho for you!", interests:["Food","Vlogging","Travel","Motorbikes","Culture"], height:"5'2\"", work:"Content Creator", followers:2100000, following:567, posts:890 },
+  { id:44, name:"Vivienne Adeyemi", age:31, country:"Nigeria", city:"Abuja", photo:"https://i.pravatar.cc/400?img=44", online:true, verified:true, bio:"Fashion designer dressing Africa's future 👗 My designs have appeared at Lagos Fashion Week three times. Ankara fabric is my paint, Lagos is my runway. Also breeding award-winning orchids!", interests:["Fashion","Design","Nature","Travel","Business"], height:"5'8\"", work:"Fashion Designer", followers:34000, following:789, posts:567 },
+  { id:45, name:"Hira Baig", age:26, country:"Pakistan", city:"Lahore", photo:"https://i.pravatar.cc/400?img=45", online:false, verified:true, bio:"Classical Kathak dancer and IT entrepreneur 💻 Lahore's art and tech scenes are both thriving. By day I code, by evening I dance 1000-year-old compositions. Duality is my superpower!", interests:["Kathak","Dance","Tech","Entrepreneurship","Art"], height:"5'4\"", work:"Dancer & Developer", followers:8900, following:567, posts:234 },
+  { id:46, name:"Ama Asante", age:25, country:"Ghana", city:"Kumasi", photo:"https://i.pravatar.cc/400?img=46", online:true, verified:false, bio:"Kente weaver and fashion sustainability activist 🧵 Kumasi is the heartland of Ashanti culture. Weaving traditional Kente cloth while pushing the fashion industry toward ethical practices!", interests:["Weaving","Fashion","Culture","Sustainability","Art"], height:"5'6\"", work:"Artisan / Activist", followers:5600, following:345, posts:189 },
+  { id:47, name:"Anika Müller", age:27, country:"Austria", city:"Vienna", photo:"https://i.pravatar.cc/400?img=47", online:true, verified:true, bio:"Concert violinist and coffeehouse philosopher ☕ Vienna's coffee houses are where great ideas are born. Performing with the Vienna Philharmonic and debating Wittgenstein over melange!", interests:["Violin","Classical Music","Philosophy","Coffee","Art"], height:"5'6\"", work:"Violinist", followers:14500, following:345, posts:312 },
+  { id:48, name:"Ekaterina Volkov", age:28, country:"Russia", city:"St. Petersburg", photo:"https://i.pravatar.cc/400?img=48", online:false, verified:true, bio:"Hermitage Museum curator and ice skating champion 🏛️ St. Petersburg's white nights inspire everything I do. Protecting Russian art heritage while absolutely dominating the ice rink!", interests:["Art Curation","Ice Skating","History","Literature","Ballet"], height:"5'7\"", work:"Museum Curator", followers:6700, following:456, posts:178 },
+  { id:49, name:"Jasmine Oduya", age:24, country:"UK", city:"London", photo:"https://i.pravatar.cc/400?img=49", online:true, verified:true, bio:"NHS junior doctor and spoken word poet 🏥 Healing people at St. Thomas', healing souls at Poetry Slam. Born in Lagos, raised in London, heart in both. Tea is non-negotiable!", interests:["Medicine","Poetry","Culture","Music","Travel"], height:"5'5\"", work:"Junior Doctor / Poet", followers:7800, following:567, posts:145 },
+  { id:50, name:"Maria Santos", age:29, country:"Philippines", city:"Manila", photo:"https://i.pravatar.cc/400?img=50", online:true, verified:true, bio:"Marine archaeologist and free diver 🤿 The Philippines has 7,641 islands and I'm exploring every one. Discovering sunken Spanish galleons, free diving to 40m, and making killer adobo!", interests:["Archaeology","Diving","History","Cooking","Travel"], height:"5'3\"", work:"Marine Archaeologist", followers:11200, following:678, posts:389 }
 ];
+
+// ============================================================
+// SAFE STORAGE — never throws, falls back to in-memory if blocked
+// ============================================================
+const memoryStore = {};
+const safeStorage = {
+  getItem(key) {
+    try { return localStorage.getItem(key); }
+    catch(e) { return memoryStore[key] ?? null; }
+  },
+  setItem(key, val) {
+    try { localStorage.setItem(key, val); }
+    catch(e) { memoryStore[key] = val; }
+  }
+};
+
+// ============================================================
+// PROFILE EDITS — admin can override name/photo/bio/etc per profile
+// ============================================================
+function getProfileEdits() {
+  try { return JSON.parse(safeStorage.getItem('cg_profile_edits') || '{}'); }
+  catch(e) { return {}; }
+}
+
+function getProfile(id) {
+  const base = PROFILES.find(p => p.id === id || p.id === Number(id));
+  if (!base) return null;
+  const edits = getProfileEdits();
+  const edit = edits[base.id];
+  if (!edit) return base;
+  const merged = { ...base, ...edit };
+  if (typeof edit.interests === 'string') {
+    merged.interests = edit.interests.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return merged;
+}
+
+function getAllProfiles() {
+  const edits = getProfileEdits();
+  return PROFILES.map(base => {
+    const edit = edits[base.id];
+    if (!edit) return base;
+    const merged = { ...base, ...edit };
+    if (typeof edit.interests === 'string') {
+      merged.interests = edit.interests.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return merged;
+  });
+}
 
 // ============================================================
 // STATE
@@ -1067,7 +1257,7 @@ function renderApp() {
     const msgs = state.conversations[id] || [];
     return msgs.length > 0 && msgs[msgs.length-1].role === 'assistant';
   }).length;
-  
+
   return `
   <div class="app-layout">
     <nav class="sidebar">
@@ -1085,6 +1275,23 @@ function renderApp() {
         <button class="nav-item" onclick="doLogout()" title="Logout" style="font-size:16px;">🚪</button>
       </div>
     </nav>
+
+    <!-- BOTTOM NAV (mobile only) -->
+    <nav class="bottom-nav">
+      <button class="bottom-nav-item ${state.view==='home'?'active':''}" onclick="goTo('home')">
+        <span class="icon">🌍</span>Discover
+      </button>
+      <button class="bottom-nav-item ${state.view==='chat'?'active':''}" onclick="goTo('chat')">
+        <span class="icon">💬</span>Messages
+        ${unreadTotal>0?`<span class="bottom-nav-badge">${unreadTotal}</span>`:''}
+      </button>
+      <button class="bottom-nav-item ${state.view==='dashboard'?'active':''}" onclick="goTo('dashboard')">
+        <span class="icon">📊</span>Dashboard
+      </button>
+      <button class="bottom-nav-item ${state.view==='profile'?'active':''}" onclick="goTo('profile')">
+        <span class="icon">👤</span>Profile
+      </button>
+    </nav>
     
     <main class="main-content">
       ${state.view==='home' ? renderHome() : ''}
@@ -1101,7 +1308,7 @@ function renderApp() {
 }
 
 function renderHome() {
-  const filtered = PROFILES.filter(p => {
+  const filtered = getAllProfiles().filter(p => {
     if (state.filter === 'All') return true;
     return REGION_MAP[p.country] === state.filter;
   });
@@ -1133,7 +1340,7 @@ function renderProfileCard(p) {
   return `
   <div class="profile-card" onclick="openProfile(${p.id})">
     ${p.verified ? '<div class="verified-badge">✓ Verified</div>' : ''}
-    <img class="profile-card-photo" src="${p.photo}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=500&fit=crop'">
+    <img class="profile-card-photo" src="${p.photo}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer" onerror="this.src='https://i.pravatar.cc/400?img=51'" referrerpolicy="no-referrer">
     <div class="profile-card-body">
       <div class="profile-card-name">${p.name}, ${p.age}</div>
       <div class="profile-card-meta">
@@ -1153,7 +1360,7 @@ function renderProfileModal() {
   return `
   <div class="modal-overlay" onclick="closeProfile(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
-      <img class="modal-photo" src="${p.photo}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=500&fit=crop'">
+      <img class="modal-photo" src="${p.photo}" alt="${p.name}" referrerpolicy="no-referrer" onerror="this.src='https://i.pravatar.cc/400?img=51'" referrerpolicy="no-referrer">
       <div class="modal-body">
         <div class="modal-name">${p.name} ${p.verified?'✓':''}</div>
         <div class="modal-location">📍 ${p.city}, ${p.country} · 🎂 ${p.age} years old · 📏 ${p.height} · 💼 ${p.work}</div>
@@ -1223,11 +1430,16 @@ function renderPaywallModal() {
 }
 
 function renderChat() {
-  const chatProfiles = Object.keys(state.conversations).map(id => PROFILES.find(p=>p.id==id)).filter(Boolean);
-  
+  const chatProfiles = Object.keys(state.conversations).map(id => getProfile(Number(id))).filter(Boolean);
+  const isMobile = window.innerWidth <= 768;
+
+  // On mobile: if a chat is open show only the window, else show list
+  const showList = !isMobile || !state.activeChat;
+  const showWindow = !isMobile || state.activeChat;
+
   return `
   <div class="chat-layout">
-    <div class="chat-list">
+    <div class="chat-list ${!showList ? 'hidden' : ''}">
       <div class="chat-list-header">Messages</div>
       ${chatProfiles.length === 0 ? `
         <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px;">
@@ -1237,11 +1449,10 @@ function renderChat() {
       ` : chatProfiles.map(p => {
         const msgs = state.conversations[p.id] || [];
         const last = msgs[msgs.length-1];
-        const count = state.messageCounts[p.id] || 0;
         return `
         <div class="chat-item ${state.activeChat===p.id?'active':''}" onclick="openChat(${p.id})">
           <div class="chat-avatar-wrap">
-            <img class="chat-avatar" src="${p.photo}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=500&fit=crop'">
+            <img class="chat-avatar" src="${p.photo}" alt="${p.name}" onerror="this.src='https://i.pravatar.cc/400?img=51'" referrerpolicy="no-referrer">
             ${p.online?'<span class="chat-online-dot"></span>':''}
           </div>
           <div class="chat-item-info">
@@ -1250,25 +1461,25 @@ function renderChat() {
           </div>
           <div>
             <div class="chat-item-time">${formatTime(new Date())}</div>
-            ${last&&last.role==='assistant'&&last!==msgs[msgs.length-2]?'<span class="unread-badge">1</span>':''}
+            ${last&&last.role==='assistant'?'<span class="unread-badge">1</span>':''}
           </div>
         </div>
         `;
       }).join('')}
     </div>
     
-    ${state.activeChat ? renderChatWindow() : `
+    ${showWindow && state.activeChat ? renderChatWindow() : !isMobile ? `
       <div class="chat-empty">
         <div class="chat-empty-icon">💬</div>
         <div>Select a conversation to start chatting</div>
       </div>
-    `}
+    ` : ''}
   </div>
   `;
 }
 
 function renderChatWindow() {
-  const p = PROFILES.find(p=>p.id===state.activeChat);
+  const p = getProfile(state.activeChat);
   if (!p) return '';
   const msgs = state.conversations[p.id] || [];
   const count = state.messageCounts[p.id] || 0;
@@ -1277,7 +1488,8 @@ function renderChatWindow() {
   return `
   <div class="chat-window">
     <div class="chat-header">
-      <img class="chat-avatar" src="${p.photo}" style="width:44px;height:44px;" onerror="this.src='https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=500&fit=crop'" alt="${p.name}">
+      <button class="chat-back-btn" onclick="state.activeChat=null;render()">← Back</button>
+      <img class="chat-avatar" src="${p.photo}" style="width:44px;height:44px;" onerror="this.src='https://i.pravatar.cc/400?img=51'" referrerpolicy="no-referrer" alt="${p.name}">
       <div style="flex:1">
         <div class="chat-header-name">${p.name}</div>
         <div class="chat-header-status">${p.online?'🟢 Online now':'⚪ Last seen recently'}</div>
@@ -1326,7 +1538,7 @@ function renderDashboard() {
       <div class="balance-sub">✓ Account Active</div>
     </div>
     
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" class="stats-grid-mobile">
       <div class="stat-box" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;">
         <div style="font-size:28px;font-weight:700;color:var(--accent2);">${chatCount}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px;">Conversations</div>
@@ -1349,7 +1561,7 @@ function renderDashboard() {
         Start exploring profiles to see your activity here!
       </div>
     ` : Object.keys(state.conversations).slice(-5).reverse().map(id => {
-      const p = PROFILES.find(pr=>pr.id==id);
+      const p = getProfile(Number(id));
       if(!p) return '';
       const msgs = state.conversations[id];
       return `
@@ -1374,7 +1586,7 @@ function renderProfilePage() {
     <div class="page-title" style="margin-bottom:24px;">My Profile</div>
     
     <div class="profile-hero">
-      <img class="profile-hero-photo" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop" alt="You">
+      <img class="profile-hero-photo" src="https://i.pravatar.cc/400?img=51" alt="You">
       <div>
         <div class="profile-hero-name">${state.currentUser.name}</div>
         <div class="profile-hero-email">${state.currentUser.email}</div>
@@ -1463,7 +1675,7 @@ function setFilter(f) {
 }
 
 function openProfile(id) {
-  state.selectedProfile = PROFILES.find(p=>p.id===id);
+  state.selectedProfile = getProfile(id);
   render();
 }
 
@@ -1507,7 +1719,7 @@ function sendMessage() {
   if (!text) return;
   
   const profileId = state.activeChat;
-  const profile = PROFILES.find(p=>p.id===profileId);
+  const profile = getProfile(profileId);
   
   // Check paywall — also check localStorage unlock granted by admin
   const count = state.messageCounts[profileId] || 0;
@@ -1538,13 +1750,13 @@ function sendMessage() {
 }
 
 function getAdminUnlocks() {
-  try { return JSON.parse(localStorage.getItem('cg_unlocked_users') || '{}'); } catch { return {}; }
+  try { return JSON.parse(safeStorage.getItem('cg_unlocked_users') || '{}'); } catch { return {}; }
 }
 
 function saveConversationToStorage(profileId, profile) {
   try {
     const key = 'cg_conv_' + state.currentUser.email + '_' + profileId;
-    const existing = JSON.parse(localStorage.getItem(key) || '{}');
+    const existing = JSON.parse(safeStorage.getItem(key) || '{}');
     const conv = {
       userId: state.currentUser.email,
       userName: state.currentUser.name,
@@ -1556,10 +1768,10 @@ function saveConversationToStorage(profileId, profile) {
       messages: state.conversations[profileId] || [],
       lastUpdated: new Date().toISOString()
     };
-    localStorage.setItem(key, JSON.stringify(conv));
+    safeStorage.setItem(key, JSON.stringify(conv));
     // Also update index of all conversations
-    const index = JSON.parse(localStorage.getItem('cg_conv_index') || '[]');
-    if (!index.includes(key)) { index.push(key); localStorage.setItem('cg_conv_index', JSON.stringify(index)); }
+    const index = JSON.parse(safeStorage.getItem('cg_conv_index') || '[]');
+    if (!index.includes(key)) { index.push(key); safeStorage.setItem('cg_conv_index', JSON.stringify(index)); }
   } catch(e) { console.log('Storage error:', e); }
 }
 
@@ -1569,7 +1781,7 @@ function pollForAdminReply(profileId) {
   pollTimer = setInterval(() => {
     try {
       const key = 'cg_conv_' + state.currentUser.email + '_' + profileId;
-      const stored = JSON.parse(localStorage.getItem(key) || '{}');
+      const stored = JSON.parse(safeStorage.getItem(key) || '{}');
       if (!stored.messages) return;
       const storedMsgs = stored.messages;
       const localMsgs = state.conversations[profileId] || [];
@@ -1603,42 +1815,40 @@ async function initiateSTK() {
     return;
   }
 
-  showToast('⏳ Processing payment request...');
+  showToast('⏳ Sending M-Pesa prompt to your phone...');
 
   // Save pending payment to localStorage so admin sees it
   try {
-    const pending = JSON.parse(localStorage.getItem('cg_pending_unlocks') || '[]');
+    const pending = JSON.parse(safeStorage.getItem('cg_pending_unlocks') || '[]');
     pending.push({
       userId: state.currentUser.email,
       userName: state.currentUser.name,
       phone: phone,
       time: new Date().toISOString()
     });
-    localStorage.setItem('cg_pending_unlocks', JSON.stringify(pending));
+    safeStorage.setItem('cg_pending_unlocks', JSON.stringify(pending));
   } catch(e) {}
 
-  // IntaSend STK Push
+  // TinyPesa STK Push via our secure serverless function
   try {
-    // Replace YOUR_INTASEND_PUBLISHABLE_KEY with your IntaSend key from intasend.com
-    const INTASEND_KEY = 'YOUR_INTASEND_PUBLISHABLE_KEY';
-    const fullPhone = '254' + phone.replace(/^0+/, '');
-    const res = await fetch('https://sandbox.intasend.com/api/v1/payment/mpesa-stk-push/', {
+    const res = await fetch('/api/stk-push', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + INTASEND_KEY
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        phone_number: fullPhone,
+        phone: phone,
         amount: 100,
-        currency: 'KES',
-        narrative: 'ConnectGlobal Chat Access'
+        accountRef: 'ConnectGlobal-' + (state.currentUser?.email || 'user')
       })
     });
     const data = await res.json();
-    console.log('IntaSend response:', data);
+    console.log('TinyPesa STK response:', data);
+
+    if (!data.success) {
+      showToast('⚠️ Payment request failed — try again');
+    }
   } catch(err) {
-    console.log('IntaSend request sent (check network):', err.message);
+    console.log('STK push request error:', err.message);
+    showToast('⚠️ Could not reach payment server');
   }
 
   state.stkSent = true;

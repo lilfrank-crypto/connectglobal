@@ -691,6 +691,128 @@
 <body>
 <div id="admin-app"></div>
 
+<!-- Firebase SDK (Firestore for real-time sync across devices) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import {
+    getFirestore, collection, doc, setDoc, getDoc, getDocs,
+    onSnapshot, query, orderBy, serverTimestamp, deleteDoc, updateDoc
+  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRpHTVqVPC_rX54auYGcIk3xy4yMOVQ2o",
+    authDomain: "connectglobal-2458e.firebaseapp.com",
+    projectId: "connectglobal-2458e",
+    storageBucket: "connectglobal-2458e.firebasestorage.app",
+    messagingSenderId: "272739449615",
+    appId: "1:272739449615:web:7a1470c4ca332d9014dc7a"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+
+  window.CGFirestore = {
+    db,
+
+    async saveConversation(userEmail, profileId, data) {
+      const id = userEmail + '_' + profileId;
+      await setDoc(doc(db, 'conversations', id), {
+        ...data,
+        userEmail,
+        profileId: Number(profileId),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    },
+
+    listenConversation(userEmail, profileId, callback) {
+      const id = userEmail + '_' + profileId;
+      return onSnapshot(doc(db, 'conversations', id), (snap) => {
+        callback(snap.exists() ? snap.data() : null);
+      });
+    },
+
+    listenAllConversations(callback) {
+      return onSnapshot(collection(db, 'conversations'), (snap) => {
+        const convs = {};
+        snap.forEach(d => { convs[d.id] = d.data(); });
+        callback(convs);
+      });
+    },
+
+    async addPendingUnlock(data) {
+      const id = data.userId + '_' + Date.now();
+      await setDoc(doc(db, 'pendingUnlocks', id), {
+        ...data,
+        createdAt: serverTimestamp()
+      });
+    },
+
+    listenPendingUnlocks(callback) {
+      return onSnapshot(collection(db, 'pendingUnlocks'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+        callback(items);
+      });
+    },
+
+    async removePendingUnlock(docId) {
+      await deleteDoc(doc(db, 'pendingUnlocks', docId));
+    },
+
+    async setUnlocked(userEmail, value) {
+      await setDoc(doc(db, 'unlockedUsers', userEmail), { unlocked: value });
+    },
+
+    listenUnlocked(userEmail, callback) {
+      return onSnapshot(doc(db, 'unlockedUsers', userEmail), (snap) => {
+        callback(snap.exists() ? snap.data().unlocked : false);
+      });
+    },
+
+    listenAllUnlocked(callback) {
+      return onSnapshot(collection(db, 'unlockedUsers'), (snap) => {
+        const result = {};
+        snap.forEach(d => { result[d.id] = d.data().unlocked; });
+        callback(result);
+      });
+    },
+
+    async saveProfileEdit(profileId, data) {
+      await setDoc(doc(db, 'profileEdits', String(profileId)), data);
+    },
+
+    async deleteProfileEdit(profileId) {
+      await deleteDoc(doc(db, 'profileEdits', String(profileId)));
+    },
+
+    listenProfileEdits(callback) {
+      return onSnapshot(collection(db, 'profileEdits'), (snap) => {
+        const edits = {};
+        snap.forEach(d => { edits[d.id] = d.data(); });
+        callback(edits);
+      });
+    },
+
+    async addTransaction(data) {
+      const id = 'TXN_' + Date.now();
+      await setDoc(doc(db, 'transactions', id), {
+        ...data,
+        createdAt: serverTimestamp()
+      });
+    },
+
+    listenTransactions(callback) {
+      return onSnapshot(collection(db, 'transactions'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+        callback(items);
+      });
+    }
+  };
+
+  window.dispatchEvent(new Event('cgFirebaseReady'));
+</script>
+
 <script>
 // ============================================================
 // SAFE STORAGE — never throws, falls back to in-memory if blocked
@@ -1222,9 +1344,9 @@ function renderProfiles() {
   `;
 }
 
+let profileEditsCache = {};
 function getProfileEdits() {
-  try { return JSON.parse(safeStorage.getItem('cg_profile_edits') || '{}'); }
-  catch(e) { return {}; }
+  return profileEditsCache;
 }
 
 function renderTransactions() {
@@ -1480,6 +1602,7 @@ function doAdminLogin() {
 
     if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
       adminState.view = 'dashboard';
+      setupAdminFirestoreListeners();
       render();
     } else {
       showAdminToast('Invalid credentials. Please try again.');
@@ -1492,6 +1615,8 @@ function doAdminLogin() {
 }
 
 function doAdminLogout() {
+  adminUnsubscribers.forEach(u => u());
+  adminUnsubscribers = [];
   adminState.view = 'login';
   render();
 }
@@ -1512,14 +1637,18 @@ function sendAdminReply() {
   const newMsg = { role: 'assistant', content: text, time: new Date().toISOString() };
   conv.messages.push(newMsg);
 
-  // Write reply back to localStorage so the user app picks it up instantly
-  try {
-    const key = adminState.activeConv;
-    const stored = JSON.parse(safeStorage.getItem(key) || '{}');
-    stored.messages = conv.messages;
-    stored.lastUpdated = new Date().toISOString();
-    safeStorage.setItem(key, JSON.stringify(stored));
-  } catch(e) { console.log('Storage write error:', e); }
+  // Write reply to Firestore so the user app picks it up in real-time
+  if (window.CGFirestore) {
+    const [userEmail, profileId] = adminState.activeConv.split('_');
+    window.CGFirestore.saveConversation(userEmail, profileId, {
+      userName: conv.userName,
+      userEmail: conv.userEmail,
+      profileName: conv.profileName,
+      profilePhoto: conv.profilePhoto,
+      profileCountry: conv.profileCountry,
+      messages: conv.messages
+    }).catch(e => console.log('Firestore write error:', e));
+  }
 
   input.value = '';
   showAdminToast('Reply sent!');
@@ -1559,19 +1688,23 @@ function confirmUnlock(index) {
   // Grant access in admin state
   adminState.unlockedUsers[pending.userId] = true;
 
-  // Write unlock to localStorage so user's app polling picks it up
-  try {
-    const unlocks = JSON.parse(safeStorage.getItem('cg_unlocked_users') || '{}');
-    unlocks[pending.userId] = true;
-    safeStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
+  // Write unlock + remove pending request in Firestore
+  if (window.CGFirestore) {
+    window.CGFirestore.setUnlocked(pending.userId, true).catch(e => console.log(e));
+    if (pending._id) {
+      window.CGFirestore.removePendingUnlock(pending._id).catch(e => console.log(e));
+    }
+    window.CGFirestore.addTransaction({
+      user: pending.userName,
+      phone: '+254' + pending.phone,
+      amount: 100,
+      currency: 'KES',
+      status: 'completed',
+      ref: 'CG-' + pending.userName.split(' ')[0].toUpperCase() + '-' + Date.now()
+    }).catch(e => console.log(e));
+  }
 
-    // Remove from pending unlocks in localStorage
-    const stored = JSON.parse(safeStorage.getItem('cg_pending_unlocks') || '[]');
-    const updated = stored.filter(p => p.userId !== pending.userId);
-    safeStorage.setItem('cg_pending_unlocks', JSON.stringify(updated));
-  } catch(e) {}
-
-  // Log as completed transaction
+  // Optimistic local update
   adminState.transactions.unshift({
     id: 'TXN' + String(adminState.transactions.length + 1).padStart(3,'0'),
     user: pending.userName,
@@ -1591,32 +1724,31 @@ function confirmUnlock(index) {
 function rejectUnlock(index) {
   const pending = adminState.pendingUnlocks[index];
   if (!pending) return;
+  if (window.CGFirestore && pending._id) {
+    window.CGFirestore.removePendingUnlock(pending._id).catch(e => console.log(e));
+  }
   adminState.pendingUnlocks.splice(index, 1);
-  showAdminToast(`✕ Payment rejected for ${pending.userName}`);
+  showAdminToast('Payment rejected for ' + pending.userName);
   render();
 }
 
 function grantAccess(userId) {
   adminState.unlockedUsers[userId] = true;
-  try {
-    const unlocks = JSON.parse(safeStorage.getItem('cg_unlocked_users') || '{}');
-    unlocks[userId] = true;
-    safeStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
-  } catch(e) {}
-  const user = adminState.users.find(u=>u.id===userId);
-  showAdminToast('Full access granted to ' + (user?.name || userId));
+  if (window.CGFirestore) {
+    window.CGFirestore.setUnlocked(userId, true).catch(e => console.log(e));
+  }
+  const user = adminState.users.find(u=>u.id===userId) || { name: userId };
+  showAdminToast('Full access granted to ' + user.name);
   render();
 }
 
 function revokeAccess(userId) {
   delete adminState.unlockedUsers[userId];
-  try {
-    const unlocks = JSON.parse(safeStorage.getItem('cg_unlocked_users') || '{}');
-    delete unlocks[userId];
-    safeStorage.setItem('cg_unlocked_users', JSON.stringify(unlocks));
-  } catch(e) {}
-  const user = adminState.users.find(u=>u.id===userId);
-  showAdminToast('Access revoked for ' + (user?.name || userId));
+  if (window.CGFirestore) {
+    window.CGFirestore.setUnlocked(userId, false).catch(e => console.log(e));
+  }
+  const user = adminState.users.find(u=>u.id===userId) || { name: userId };
+  showAdminToast('Access revoked for ' + user.name);
   render();
 }
 
@@ -1716,12 +1848,14 @@ function saveProfileEdit(profileId) {
   const interests = document.getElementById('ep-interests')?.value?.trim();
   const photo = document.getElementById('ep-photo')?.value?.trim();
 
-  // Save edits to localStorage so app.html picks them up
-  try {
-    const edits = JSON.parse(safeStorage.getItem('cg_profile_edits') || '{}');
-    edits[profileId] = { name, age: parseInt(age), city, country, bio, interests, photo };
-    safeStorage.setItem('cg_profile_edits', JSON.stringify(edits));
-  } catch(e) {}
+  const editData = { name, age: parseInt(age), city, country, bio, interests, photo };
+
+  // Save to Firestore so app.html picks it up live
+  if (window.CGFirestore) {
+    window.CGFirestore.saveProfileEdit(profileId, editData).catch(e => console.log(e));
+  }
+  // Optimistic local update
+  profileEditsCache[profileId] = editData;
 
   showAdminToast('Profile for ' + name + ' saved!');
   adminState.modal = null;
@@ -1729,69 +1863,89 @@ function saveProfileEdit(profileId) {
 }
 
 function resetProfileEdit(profileId) {
-  try {
-    const edits = JSON.parse(safeStorage.getItem('cg_profile_edits') || '{}');
-    delete edits[profileId];
-    safeStorage.setItem('cg_profile_edits', JSON.stringify(edits));
-  } catch(e) {}
+  if (window.CGFirestore) {
+    window.CGFirestore.deleteProfileEdit(profileId).catch(e => console.log(e));
+  }
+  delete profileEditsCache[profileId];
 
   showAdminToast('Profile reset to default');
   adminState.modal = null;
   render();
 }
 
-function loadFromStorage() {
-  // Load conversations from localStorage
-  try {
-    const index = JSON.parse(safeStorage.getItem('cg_conv_index') || '[]');
-    index.forEach(key => {
-      const conv = JSON.parse(safeStorage.getItem(key) || 'null');
-      if (conv && conv.messages && conv.messages.length > 0) {
-        adminState.conversations[key] = conv;
-        // Register user if not already in list
-        const exists = adminState.users.find(u => u.email === conv.userEmail);
-        if (!exists) {
-          adminState.users.push({
-            id: adminState.users.length + 1,
-            name: conv.userName,
-            email: conv.userEmail,
-            phone: 'N/A',
-            joined: new Date().toLocaleDateString(),
-            status: 'active',
-            balance: 0,
-            msgCount: conv.messages.filter(m=>m.role==='user').length,
-            unlockedCount: 0,
-            lastActive: 'Just now'
-          });
-        } else {
-          exists.msgCount = conv.messages.filter(m=>m.role==='user').length;
-          exists.lastActive = 'Recently';
-        }
+// ============================================================
+// FIRESTORE REAL-TIME LISTENERS
+// ============================================================
+let adminUnsubscribers = [];
+
+function setupAdminFirestoreListeners() {
+  if (!window.CGFirestore) return;
+  adminUnsubscribers.forEach(u => u());
+  adminUnsubscribers = [];
+
+  // All conversations — real-time
+  const unsubConvs = window.CGFirestore.listenAllConversations((convs) => {
+    adminState.conversations = convs;
+
+    // Register/update users list based on conversations
+    Object.values(convs).forEach(conv => {
+      if (!conv.messages || conv.messages.length === 0) return;
+      const exists = adminState.users.find(u => u.email === conv.userEmail);
+      const msgCount = conv.messages.filter(m=>m.role==='user').length;
+      if (!exists) {
+        adminState.users.push({
+          id: adminState.users.length + 1,
+          name: conv.userName,
+          email: conv.userEmail,
+          phone: 'N/A',
+          joined: new Date().toLocaleDateString(),
+          status: 'active',
+          balance: 0,
+          msgCount: msgCount,
+          unlockedCount: 0,
+          lastActive: 'Just now'
+        });
+      } else {
+        exists.msgCount = msgCount;
+        exists.lastActive = 'Recently';
       }
     });
-  } catch(e) { console.log('Load error:', e); }
 
-  // Load pending unlocks from localStorage
-  try {
-    const pending = JSON.parse(safeStorage.getItem('cg_pending_unlocks') || '[]');
-    pending.forEach(p => {
-      const alreadyIn = adminState.pendingUnlocks.find(x => x.userId === p.userId);
-      if (!alreadyIn) adminState.pendingUnlocks.push(p);
-    });
-  } catch(e) {}
-}
-
-// Poll localStorage every 4 seconds for new messages and pending unlocks
-setInterval(() => {
-  const prevConvCount = Object.keys(adminState.conversations).length;
-  const prevPendingCount = adminState.pendingUnlocks.length;
-  loadFromStorage();
-  const newConvCount = Object.keys(adminState.conversations).length;
-  const newPendingCount = adminState.pendingUnlocks.length;
-  if (newConvCount !== prevConvCount || newPendingCount !== prevPendingCount) {
     render();
-  }
-}, 4000);
+  });
+  adminUnsubscribers.push(unsubConvs);
+
+  // Pending unlocks — real-time
+  const unsubPending = window.CGFirestore.listenPendingUnlocks((items) => {
+    adminState.pendingUnlocks = items;
+    render();
+  });
+  adminUnsubscribers.push(unsubPending);
+
+  // Unlocked users — real-time
+  const unsubUnlocked = window.CGFirestore.listenAllUnlocked((unlocked) => {
+    adminState.unlockedUsers = unlocked;
+    render();
+  });
+  adminUnsubscribers.push(unsubUnlocked);
+
+  // Profile edits — real-time
+  const unsubEdits = window.CGFirestore.listenProfileEdits((edits) => {
+    profileEditsCache = edits;
+    render();
+  });
+  adminUnsubscribers.push(unsubEdits);
+
+  // Transactions — real-time
+  const unsubTx = window.CGFirestore.listenTransactions((items) => {
+    adminState.transactions = items.map(t => ({
+      ...t,
+      time: t.createdAt?.toDate ? t.createdAt.toDate() : new Date()
+    })).sort((a,b) => b.time - a.time);
+    render();
+  });
+  adminUnsubscribers.push(unsubTx);
+}
 
 function showAdminToast(msg) {
   adminState.toast = msg;
@@ -1812,7 +1966,6 @@ function bindAdminEvents() {}
 
 // INIT
 try {
-  loadFromStorage();
   render();
 } catch(e) {
   console.error('Init error:', e);

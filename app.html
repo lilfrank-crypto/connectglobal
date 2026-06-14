@@ -1040,6 +1040,139 @@
 
 <div id="app"></div>
 
+<!-- Firebase SDK (Firestore for real-time sync across devices) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import {
+    getFirestore, collection, doc, setDoc, getDoc, getDocs,
+    onSnapshot, query, orderBy, serverTimestamp, deleteDoc, updateDoc
+  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRpHTVqVPC_rX54auYGcIk3xy4yMOVQ2o",
+    authDomain: "connectglobal-2458e.firebaseapp.com",
+    projectId: "connectglobal-2458e",
+    storageBucket: "connectglobal-2458e.firebasestorage.app",
+    messagingSenderId: "272739449615",
+    appId: "1:272739449615:web:7a1470c4ca332d9014dc7a"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+
+  // ============================================================
+  // Expose a simple global API for the main inline script to use
+  // ============================================================
+  window.CGFirestore = {
+    db,
+
+    // Save/update a conversation document: conversations/{userEmail}_{profileId}
+    async saveConversation(userEmail, profileId, data) {
+      const id = userEmail + '_' + profileId;
+      await setDoc(doc(db, 'conversations', id), {
+        ...data,
+        userEmail,
+        profileId: Number(profileId),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    },
+
+    // Listen to a single conversation in real-time
+    listenConversation(userEmail, profileId, callback) {
+      const id = userEmail + '_' + profileId;
+      return onSnapshot(doc(db, 'conversations', id), (snap) => {
+        callback(snap.exists() ? snap.data() : null);
+      });
+    },
+
+    // Listen to ALL conversations (for admin)
+    listenAllConversations(callback) {
+      return onSnapshot(collection(db, 'conversations'), (snap) => {
+        const convs = {};
+        snap.forEach(d => { convs[d.id] = d.data(); });
+        callback(convs);
+      });
+    },
+
+    // Pending unlock requests
+    async addPendingUnlock(data) {
+      const id = data.userId + '_' + Date.now();
+      await setDoc(doc(db, 'pendingUnlocks', id), {
+        ...data,
+        createdAt: serverTimestamp()
+      });
+    },
+
+    listenPendingUnlocks(callback) {
+      return onSnapshot(collection(db, 'pendingUnlocks'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+        callback(items);
+      });
+    },
+
+    async removePendingUnlock(docId) {
+      await deleteDoc(doc(db, 'pendingUnlocks', docId));
+    },
+
+    // Unlocked users: unlockedUsers/{userEmail} -> { unlocked: true }
+    async setUnlocked(userEmail, value) {
+      await setDoc(doc(db, 'unlockedUsers', userEmail), { unlocked: value });
+    },
+
+    listenUnlocked(userEmail, callback) {
+      return onSnapshot(doc(db, 'unlockedUsers', userEmail), (snap) => {
+        callback(snap.exists() ? snap.data().unlocked : false);
+      });
+    },
+
+    listenAllUnlocked(callback) {
+      return onSnapshot(collection(db, 'unlockedUsers'), (snap) => {
+        const result = {};
+        snap.forEach(d => { result[d.id] = d.data().unlocked; });
+        callback(result);
+      });
+    },
+
+    // Profile edits: profileEdits/{profileId}
+    async saveProfileEdit(profileId, data) {
+      await setDoc(doc(db, 'profileEdits', String(profileId)), data);
+    },
+
+    async deleteProfileEdit(profileId) {
+      await deleteDoc(doc(db, 'profileEdits', String(profileId)));
+    },
+
+    listenProfileEdits(callback) {
+      return onSnapshot(collection(db, 'profileEdits'), (snap) => {
+        const edits = {};
+        snap.forEach(d => { edits[d.id] = d.data(); });
+        callback(edits);
+      });
+    },
+
+    // Transactions log
+    async addTransaction(data) {
+      const id = 'TXN_' + Date.now();
+      await setDoc(doc(db, 'transactions', id), {
+        ...data,
+        createdAt: serverTimestamp()
+      });
+    },
+
+    listenTransactions(callback) {
+      return onSnapshot(collection(db, 'transactions'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+        callback(items);
+      });
+    }
+  };
+
+  // Signal that Firebase is ready
+  window.dispatchEvent(new Event('cgFirebaseReady'));
+</script>
+
 <script>
 // ============================================================
 // DATA STORE
@@ -1114,17 +1247,18 @@ const safeStorage = {
 
 // ============================================================
 // PROFILE EDITS — admin can override name/photo/bio/etc per profile
+// Synced live from Firestore into a local cache for synchronous reads
 // ============================================================
+let profileEditsCache = {};
+
 function getProfileEdits() {
-  try { return JSON.parse(safeStorage.getItem('cg_profile_edits') || '{}'); }
-  catch(e) { return {}; }
+  return profileEditsCache;
 }
 
 function getProfile(id) {
   const base = PROFILES.find(p => p.id === id || p.id === Number(id));
   if (!base) return null;
-  const edits = getProfileEdits();
-  const edit = edits[base.id];
+  const edit = profileEditsCache[base.id];
   if (!edit) return base;
   const merged = { ...base, ...edit };
   if (typeof edit.interests === 'string') {
@@ -1134,9 +1268,8 @@ function getProfile(id) {
 }
 
 function getAllProfiles() {
-  const edits = getProfileEdits();
   return PROFILES.map(base => {
-    const edit = edits[base.id];
+    const edit = profileEditsCache[base.id];
     if (!edit) return base;
     const merged = { ...base, ...edit };
     if (typeof edit.interests === 'string') {
@@ -1158,6 +1291,7 @@ let state = {
   conversations: {},  // profileId -> [{role, content, time}]
   messageCounts: {},  // profileId -> number of user messages
   unlockedProfiles: {}, // profileId -> true
+  unlockedGlobal: false, // true once admin confirms M-Pesa payment
   filter: 'All',
   paywall: null,       // profileId pending unlock
   paywallPhone: '',
@@ -1642,6 +1776,7 @@ function doLogin() {
   if (!email || !pass) { showToast('⚠️ Please fill in all fields'); return; }
   state.currentUser = { name: email.split('@')[0], email, bio: '' };
   state.view = 'home';
+  setupFirestoreListeners();
   render();
 }
 
@@ -1654,10 +1789,13 @@ function doSignup() {
   state.currentUser = { name, email, bio: '' };
   state.view = 'home';
   showToast('🎉 Welcome to ConnectGlobal!');
+  setupFirestoreListeners();
   render();
 }
 
 function doLogout() {
+  firestoreUnsubscribers.forEach(unsub => unsub());
+  firestoreUnsubscribers = [];
   state.view = 'auth';
   state.currentUser = null;
   render();
@@ -1689,6 +1827,7 @@ function startChat(profileId) {
   if (!state.conversations[profileId]) {
     state.conversations[profileId] = [];
     state.messageCounts[profileId] = 0;
+    listenToConversation(profileId);
   }
   state.selectedProfile = null;
   state.activeChat = profileId;
@@ -1721,11 +1860,9 @@ function sendMessage() {
   const profileId = state.activeChat;
   const profile = getProfile(profileId);
   
-  // Check paywall — also check localStorage unlock granted by admin
+  // Check paywall — unlock status is synced live from Firestore into state.unlockedProfiles
   const count = state.messageCounts[profileId] || 0;
-  const localUnlock = getAdminUnlocks();
-  const unlocked = state.unlockedProfiles[profileId] || localUnlock[state.currentUser?.email];
-  if (unlocked) state.unlockedProfiles[profileId] = true;
+  const unlocked = state.unlockedProfiles[profileId] || state.unlockedGlobal;
   
   if (!unlocked && count >= 3) {
     state.paywall = profileId;
@@ -1733,7 +1870,7 @@ function sendMessage() {
     return;
   }
   
-  // Store message locally
+  // Store message locally for instant feedback
   if (!state.conversations[profileId]) state.conversations[profileId] = [];
   const msg = { role:'user', content:text, time:new Date().toISOString() };
   state.conversations[profileId].push(msg);
@@ -1741,64 +1878,83 @@ function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
 
-  // ── Bridge to admin via localStorage ──
-  saveConversationToStorage(profileId, profile);
+  // ── Sync to Firestore so admin sees it in real-time ──
+  saveConversationToFirestore(profileId, profile);
 
   render();
-  // Poll for admin reply
-  pollForAdminReply(profileId);
 }
 
-function getAdminUnlocks() {
-  try { return JSON.parse(safeStorage.getItem('cg_unlocked_users') || '{}'); } catch { return {}; }
+function saveConversationToFirestore(profileId, profile) {
+  if (!window.CGFirestore || !state.currentUser) return;
+  window.CGFirestore.saveConversation(state.currentUser.email, profileId, {
+    userName: state.currentUser.name,
+    userEmail: state.currentUser.email,
+    profileName: profile.name,
+    profilePhoto: profile.photo,
+    profileCountry: profile.country,
+    messages: state.conversations[profileId] || []
+  }).catch(e => console.log('Firestore save error:', e));
 }
 
-function saveConversationToStorage(profileId, profile) {
-  try {
-    const key = 'cg_conv_' + state.currentUser.email + '_' + profileId;
-    const existing = JSON.parse(safeStorage.getItem(key) || '{}');
-    const conv = {
-      userId: state.currentUser.email,
-      userName: state.currentUser.name,
-      userEmail: state.currentUser.email,
-      profileId: profileId,
-      profileName: profile.name,
-      profilePhoto: profile.photo,
-      profileCountry: profile.country,
-      messages: state.conversations[profileId] || [],
-      lastUpdated: new Date().toISOString()
-    };
-    safeStorage.setItem(key, JSON.stringify(conv));
-    // Also update index of all conversations
-    const index = JSON.parse(safeStorage.getItem('cg_conv_index') || '[]');
-    if (!index.includes(key)) { index.push(key); safeStorage.setItem('cg_conv_index', JSON.stringify(index)); }
-  } catch(e) { console.log('Storage error:', e); }
-}
+// ============================================================
+// FIRESTORE REAL-TIME LISTENERS (set up after login)
+// ============================================================
+let firestoreUnsubscribers = [];
 
-let pollTimer = null;
-function pollForAdminReply(profileId) {
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(() => {
-    try {
-      const key = 'cg_conv_' + state.currentUser.email + '_' + profileId;
-      const stored = JSON.parse(safeStorage.getItem(key) || '{}');
-      if (!stored.messages) return;
-      const storedMsgs = stored.messages;
+function setupFirestoreListeners() {
+  if (!window.CGFirestore || !state.currentUser) return;
+
+  // Clean up any existing listeners
+  firestoreUnsubscribers.forEach(unsub => unsub());
+  firestoreUnsubscribers = [];
+
+  const email = state.currentUser.email;
+
+  // Listen to all of this user's conversations
+  Object.keys(state.conversations).forEach(profileId => {
+    const unsub = window.CGFirestore.listenConversation(email, profileId, (data) => {
+      if (!data || !data.messages) return;
       const localMsgs = state.conversations[profileId] || [];
-      // If stored has more messages than local (admin replied), update
-      if (storedMsgs.length > localMsgs.length) {
-        state.conversations[profileId] = storedMsgs;
+      if (data.messages.length > localMsgs.length) {
+        state.conversations[profileId] = data.messages;
         render();
       }
-      // Check if admin unlocked this user
-      const unlocks = getAdminUnlocks();
-      if (unlocks[state.currentUser?.email] && !state.unlockedProfiles[profileId]) {
-        state.unlockedProfiles[profileId] = true;
-        showToast('🎉 Your access has been unlocked! Chat freely!');
-        render();
-      }
-    } catch(e) {}
-  }, 3000); // check every 3 seconds
+    });
+    firestoreUnsubscribers.push(unsub);
+  });
+
+  // Listen for unlock status (per-user)
+  const unsubUnlock = window.CGFirestore.listenUnlocked(email, (unlocked) => {
+    if (unlocked && !state.unlockedGlobal) {
+      state.unlockedGlobal = true;
+      Object.keys(state.conversations).forEach(pid => state.unlockedProfiles[pid] = true);
+      showToast('🎉 Your access has been unlocked! Chat freely!');
+      render();
+    }
+  });
+  firestoreUnsubscribers.push(unsubUnlock);
+
+  // Listen for profile edits (global, applies to all users)
+  const unsubEdits = window.CGFirestore.listenProfileEdits((edits) => {
+    profileEditsCache = edits;
+    render();
+  });
+  firestoreUnsubscribers.push(unsubEdits);
+}
+
+// Re-subscribe to a specific conversation when user opens a new chat
+function listenToConversation(profileId) {
+  if (!window.CGFirestore || !state.currentUser) return;
+  const email = state.currentUser.email;
+  const unsub = window.CGFirestore.listenConversation(email, profileId, (data) => {
+    if (!data || !data.messages) return;
+    const localMsgs = state.conversations[profileId] || [];
+    if (data.messages.length > localMsgs.length) {
+      state.conversations[profileId] = data.messages;
+      render();
+    }
+  });
+  firestoreUnsubscribers.push(unsub);
 }
 
 function closePaywall(e) {
@@ -1817,17 +1973,16 @@ async function initiateSTK() {
 
   showToast('⏳ Sending M-Pesa prompt to your phone...');
 
-  // Save pending payment to localStorage so admin sees it
+  // Save pending payment to Firestore so admin sees it in real-time
   try {
-    const pending = JSON.parse(safeStorage.getItem('cg_pending_unlocks') || '[]');
-    pending.push({
-      userId: state.currentUser.email,
-      userName: state.currentUser.name,
-      phone: phone,
-      time: new Date().toISOString()
-    });
-    safeStorage.setItem('cg_pending_unlocks', JSON.stringify(pending));
-  } catch(e) {}
+    if (window.CGFirestore) {
+      await window.CGFirestore.addPendingUnlock({
+        userId: state.currentUser.email,
+        userName: state.currentUser.name,
+        phone: phone
+      });
+    }
+  } catch(e) { console.log('Pending unlock save error:', e); }
 
   // TinyPesa STK Push via our secure serverless function
   try {
@@ -1889,7 +2044,19 @@ function bindEvents() {
 // INIT
 // ============================================================
 render();
+
+// Listen for profile edits globally (even before login) so Discover page
+// reflects admin changes immediately
+if (window.addEventListener) {
+  window.addEventListener('cgFirebaseReady', () => {
+    if (window.CGFirestore) {
+      window.CGFirestore.listenProfileEdits((edits) => {
+        profileEditsCache = edits;
+        render();
+      });
+    }
+  });
+}
 </script>
 </body>
 </html>
-  

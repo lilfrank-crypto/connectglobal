@@ -141,6 +141,7 @@
 
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124,58,237,0.4); }
   .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 
   /* MAIN APP */
   .app-layout {
@@ -1040,13 +1041,18 @@
 
 <div id="app"></div>
 
-<!-- Firebase SDK (Firestore for real-time sync across devices) -->
+<!-- Firebase SDK (Firestore + Auth for real-time sync & user accounts) -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import {
     getFirestore, collection, doc, setDoc, getDoc, getDocs,
     onSnapshot, query, orderBy, serverTimestamp, deleteDoc, updateDoc
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup,
+    updateProfile, sendPasswordResetEmail
+  } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyCRpHTVqVPC_rX54auYGcIk3xy4yMOVQ2o",
@@ -1059,6 +1065,64 @@
 
   const fbApp = initializeApp(firebaseConfig);
   const db = getFirestore(fbApp);
+  const auth = getAuth(fbApp);
+  const googleProvider = new GoogleAuthProvider();
+
+  // ============================================================
+  // Firebase Authentication API
+  // ============================================================
+  window.CGAuth = {
+    auth,
+
+    async signUp(name, email, password) {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      return { name, email: cred.user.email, uid: cred.user.uid };
+    },
+
+    async signIn(email, password) {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      return {
+        name: cred.user.displayName || cred.user.email.split('@')[0],
+        email: cred.user.email,
+        uid: cred.user.uid
+      };
+    },
+
+    async signInWithGoogle() {
+      const cred = await signInWithPopup(auth, googleProvider);
+      return {
+        name: cred.user.displayName || cred.user.email.split('@')[0],
+        email: cred.user.email,
+        uid: cred.user.uid,
+        photoURL: cred.user.photoURL
+      };
+    },
+
+    async logOut() {
+      await signOut(auth);
+    },
+
+    async resetPassword(email) {
+      await sendPasswordResetEmail(auth, email);
+    },
+
+    // Listen for auth state changes (e.g. session restored on page reload)
+    onAuthChange(callback) {
+      return onAuthStateChanged(auth, (user) => {
+        if (user) {
+          callback({
+            name: user.displayName || user.email.split('@')[0],
+            email: user.email,
+            uid: user.uid,
+            photoURL: user.photoURL
+          });
+        } else {
+          callback(null);
+        }
+      });
+    }
+  };
 
   // ============================================================
   // Expose a simple global API for the main inline script to use
@@ -1285,6 +1349,8 @@ function getAllProfiles() {
 let state = {
   view: 'auth',      // auth | home | chat | dashboard | profile
   authTab: 'login',
+  authLoading: false,
+  authError: null,
   currentUser: null,
   selectedProfile: null,
   activeChat: null,
@@ -1365,7 +1431,10 @@ function renderAuth() {
           <label class="form-label">Password</label>
           <input type="password" class="form-input" id="login-pass" placeholder="••••••••">
         </div>
-        <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+        <button class="btn-primary" onclick="doLogin()" ${state.authLoading?'disabled':''}>${state.authLoading?'Signing in...':'Sign In →'}</button>
+        <p style="text-align:center;margin-top:10px;">
+          <a href="javascript:void(0)" onclick="doForgotPassword()" style="color:var(--muted);font-size:13px;text-decoration:underline;">Forgot password?</a>
+        </p>
       ` : `
         <div class="form-group">
           <label class="form-label">Full name</label>
@@ -1379,8 +1448,22 @@ function renderAuth() {
           <label class="form-label">Password</label>
           <input type="password" class="form-input" id="signup-pass" placeholder="Min 8 characters">
         </div>
-        <button class="btn-primary" onclick="doSignup()">Create Account →</button>
+        <button class="btn-primary" onclick="doSignup()" ${state.authLoading?'disabled':''}>${state.authLoading?'Creating account...':'Create Account →'}</button>
       `}
+
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="color:var(--muted);font-size:12px;">OR</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+
+      <button class="btn-primary" onclick="doGoogleSignIn()" ${state.authLoading?'disabled':''}
+        style="background:white;color:#1f1f1f;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.85 2.09-1.81 2.73v2.27h2.92c1.71-1.57 2.69-3.89 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.92-2.27c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.33C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.97 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.97H.96C.35 6.21 0 7.56 0 9s.35 2.79.96 4.03l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.97l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+        ${state.authLoading?'Please wait...':'Continue with Google'}
+      </button>
+
+      ${state.authError ? `<div style="margin-top:14px;padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#f87171;font-size:13px;">${state.authError}</div>` : ''}
     </div>
   </div>
   `;
@@ -1767,35 +1850,104 @@ function renderProfilePage() {
 // ============================================================
 function setAuthTab(tab) {
   state.authTab = tab;
+  state.authError = null;
   render();
 }
 
-function doLogin() {
-  const email = document.getElementById('login-email')?.value;
+async function doLogin() {
+  const email = document.getElementById('login-email')?.value?.trim();
   const pass = document.getElementById('login-pass')?.value;
-  if (!email || !pass) { showToast('⚠️ Please fill in all fields'); return; }
-  state.currentUser = { name: email.split('@')[0], email, bio: '' };
-  state.view = 'home';
-  setupFirestoreListeners();
+  if (!email || !pass) { state.authError = 'Please fill in all fields'; render(); return; }
+
+  state.authLoading = true;
+  state.authError = null;
+  render();
+
+  try {
+    if (!window.CGAuth) throw new Error('Auth not ready, please wait a moment and try again');
+    const user = await window.CGAuth.signIn(email, pass);
+    state.currentUser = { name: user.name, email: user.email, uid: user.uid, bio: '' };
+    state.view = 'home';
+    setupFirestoreListeners();
+  } catch(e) {
+    state.authError = friendlyAuthError(e);
+  }
+  state.authLoading = false;
   render();
 }
 
-function doSignup() {
-  const name = document.getElementById('signup-name')?.value;
-  const email = document.getElementById('signup-email')?.value;
+async function doSignup() {
+  const name = document.getElementById('signup-name')?.value?.trim();
+  const email = document.getElementById('signup-email')?.value?.trim();
   const pass = document.getElementById('signup-pass')?.value;
-  if (!name || !email || !pass) { showToast('⚠️ Please fill in all fields'); return; }
-  if (pass.length < 8) { showToast('⚠️ Password must be at least 8 characters'); return; }
-  state.currentUser = { name, email, bio: '' };
-  state.view = 'home';
-  showToast('🎉 Welcome to ConnectGlobal!');
-  setupFirestoreListeners();
+  if (!name || !email || !pass) { state.authError = 'Please fill in all fields'; render(); return; }
+  if (pass.length < 8) { state.authError = 'Password must be at least 8 characters'; render(); return; }
+
+  state.authLoading = true;
+  state.authError = null;
   render();
+
+  try {
+    if (!window.CGAuth) throw new Error('Auth not ready, please wait a moment and try again');
+    const user = await window.CGAuth.signUp(name, email, pass);
+    state.currentUser = { name: user.name, email: user.email, uid: user.uid, bio: '' };
+    state.view = 'home';
+    showToast('🎉 Welcome to ConnectGlobal!');
+    setupFirestoreListeners();
+  } catch(e) {
+    state.authError = friendlyAuthError(e);
+  }
+  state.authLoading = false;
+  render();
+}
+
+async function doGoogleSignIn() {
+  state.authLoading = true;
+  state.authError = null;
+  render();
+
+  try {
+    if (!window.CGAuth) throw new Error('Auth not ready, please wait a moment and try again');
+    const user = await window.CGAuth.signInWithGoogle();
+    state.currentUser = { name: user.name, email: user.email, uid: user.uid, photoURL: user.photoURL, bio: '' };
+    state.view = 'home';
+    showToast('🎉 Welcome to ConnectGlobal!');
+    setupFirestoreListeners();
+  } catch(e) {
+    state.authError = friendlyAuthError(e);
+  }
+  state.authLoading = false;
+  render();
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('login-email')?.value?.trim();
+  if (!email) { state.authError = 'Enter your email above first, then tap "Forgot password?"'; render(); return; }
+  try {
+    if (!window.CGAuth) throw new Error('Auth not ready, please wait a moment and try again');
+    await window.CGAuth.resetPassword(email);
+    showToast('📧 Password reset email sent to ' + email);
+  } catch(e) {
+    state.authError = friendlyAuthError(e);
+    render();
+  }
+}
+
+function friendlyAuthError(e) {
+  const code = e?.code || '';
+  if (code.includes('email-already-in-use')) return 'An account with this email already exists. Try signing in instead.';
+  if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) return 'Incorrect email or password.';
+  if (code.includes('invalid-email')) return 'Please enter a valid email address.';
+  if (code.includes('weak-password')) return 'Password is too weak — use at least 8 characters.';
+  if (code.includes('popup-closed-by-user')) return 'Google sign-in was cancelled.';
+  if (code.includes('network-request-failed')) return 'Network error — check your connection and try again.';
+  return e?.message || 'Something went wrong. Please try again.';
 }
 
 function doLogout() {
   firestoreUnsubscribers.forEach(unsub => unsub());
   firestoreUnsubscribers = [];
+  if (window.CGAuth) window.CGAuth.logOut().catch(()=>{});
   state.view = 'auth';
   state.currentUser = null;
   render();
@@ -2046,13 +2198,27 @@ function bindEvents() {
 render();
 
 // Listen for profile edits globally (even before login) so Discover page
-// reflects admin changes immediately
+// reflects admin changes immediately, and restore session if already logged in
 if (window.addEventListener) {
   window.addEventListener('cgFirebaseReady', () => {
     if (window.CGFirestore) {
       window.CGFirestore.listenProfileEdits((edits) => {
         profileEditsCache = edits;
         render();
+      });
+    }
+
+    // Restore session on page reload if user is already signed in
+    if (window.CGAuth) {
+      let firstCheck = true;
+      window.CGAuth.onAuthChange((user) => {
+        if (user && state.view === 'auth') {
+          state.currentUser = { name: user.name, email: user.email, uid: user.uid, photoURL: user.photoURL || null, bio: '' };
+          state.view = 'home';
+          setupFirestoreListeners();
+          render();
+        }
+        firstCheck = false;
       });
     }
   });

@@ -1046,7 +1046,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import {
     getFirestore, collection, doc, setDoc, getDoc, getDocs,
-    onSnapshot, query, orderBy, serverTimestamp, deleteDoc, updateDoc
+    onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, updateDoc
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -1158,6 +1158,16 @@
       });
     },
 
+    // Listen to ALL conversations belonging to one user (for app.html Messages tab)
+    listenUserConversations(userEmail, callback) {
+      const q = query(collection(db, 'conversations'), where('userEmail', '==', userEmail));
+      return onSnapshot(q, (snap) => {
+        const convs = {};
+        snap.forEach(d => { convs[d.data().profileId] = d.data(); });
+        callback(convs);
+      });
+    },
+
     // Pending unlock requests
     async addPendingUnlock(data) {
       const id = data.userId + '_' + Date.now();
@@ -1215,6 +1225,14 @@
       });
     },
 
+    // One-time fetch (faster initial paint than waiting for first snapshot)
+    async getProfileEditsOnce() {
+      const snap = await getDocs(collection(db, 'profileEdits'));
+      const edits = {};
+      snap.forEach(d => { edits[d.id] = d.data(); });
+      return edits;
+    },
+
     // Transactions log
     async addTransaction(data) {
       const id = 'TXN_' + Date.now();
@@ -1226,6 +1244,23 @@
 
     listenTransactions(callback) {
       return onSnapshot(collection(db, 'transactions'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+        callback(items);
+      });
+    },
+
+    // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt }
+    async recordReferral(referrerCode, newUserEmail) {
+      await setDoc(doc(db, 'referrals', newUserEmail), {
+        referrerCode,
+        newUserEmail,
+        createdAt: serverTimestamp()
+      });
+    },
+
+    listenReferrals(callback) {
+      return onSnapshot(collection(db, 'referrals'), (snap) => {
         const items = [];
         snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
         callback(items);
@@ -1351,6 +1386,7 @@ let state = {
   authTab: 'login',
   authLoading: false,
   authError: null,
+  sessionChecking: true, // true until Firebase confirms whether user is logged in
   currentUser: null,
   selectedProfile: null,
   activeChat: null,
@@ -1359,6 +1395,7 @@ let state = {
   unlockedProfiles: {}, // profileId -> true
   unlockedGlobal: false, // true once admin confirms M-Pesa payment
   filter: 'All',
+  shuffleSeed: Math.floor(Math.random() * 1000000),
   paywall: null,       // profileId pending unlock
   paywallPhone: '',
   stkSent: false,
@@ -1384,13 +1421,31 @@ const REGION_MAP = {
   Brazil:'Americas', Colombia:'Americas', Mexico:'Americas', Canada:'Americas',
 };
 
+// Seeded pseudo-random shuffle (Fisher-Yates with a simple LCG)
+// so the order is stable within a session but different each time the seed changes
+function shuffleWithSeed(arr, seed) {
+  const result = [...arr];
+  let s = seed;
+  const rand = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // ============================================================
 // RENDER ENGINE
 // ============================================================
 function render() {
   const app = document.getElementById('app');
   
-  if (state.view === 'auth') {
+  if (state.sessionChecking) {
+    app.innerHTML = renderSessionLoading();
+  } else if (state.view === 'auth') {
     app.innerHTML = renderAuth();
   } else {
     app.innerHTML = renderApp();
@@ -1408,6 +1463,18 @@ function render() {
   // Scroll chat to bottom
   const msgs = document.getElementById('chat-messages');
   if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderSessionLoading() {
+  return `
+  <div class="auth-screen">
+    <div style="text-align:center;">
+      <div class="logo" style="margin-bottom:16px;">ConnectGlobal</div>
+      <div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;margin:0 auto;animation:spin 0.8s linear infinite;"></div>
+    </div>
+  </div>
+  <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+  `;
 }
 
 function renderAuth() {
@@ -1529,13 +1596,17 @@ function renderHome() {
     if (state.filter === 'All') return true;
     return REGION_MAP[p.country] === state.filter;
   });
+
+  // Shuffle using a session-stable order so it doesn't re-shuffle on every render,
+  // but changes each time the page loads / user logs in
+  const shuffled = shuffleWithSeed(filtered, state.shuffleSeed);
   
   return `
   <div>
     <div class="page-header">
       <div>
         <div class="page-title">Discover People</div>
-        <div class="page-subtitle">${filtered.length} amazing people from around the world</div>
+        <div class="page-subtitle">${shuffled.length} amazing people from around the world</div>
       </div>
       <div style="font-size:24px;">🌏</div>
     </div>
@@ -1547,7 +1618,7 @@ function renderHome() {
     </div>
     
     <div class="profiles-grid">
-      ${filtered.map(p => renderProfileCard(p)).join('')}
+      ${shuffled.map(p => renderProfileCard(p)).join('')}
     </div>
   </div>
   `;
@@ -1841,6 +1912,25 @@ function renderProfilePage() {
         </div>
       </div>
     </div>
+
+    <div class="form-section">
+      <div class="form-section-title">🎁 Refer Friends</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+        Share your referral link — when friends join using it, you both get rewarded!
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" class="form-input" id="referral-link" value="${getReferralLink()}" readonly style="font-size:12px;">
+        <button class="btn-save" onclick="copyReferralLink()" style="white-space:nowrap;flex-shrink:0;">Copy</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="btn-save" onclick="shareReferralWhatsApp()" style="background:#25D366;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:18px;">💬</span> WhatsApp
+        </button>
+        <button class="btn-save" onclick="shareReferralGeneric()" style="background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-size:18px;">📤</span> Share
+        </button>
+      </div>
+    </div>
   </div>
   `;
 }
@@ -1894,11 +1984,23 @@ async function doSignup() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
+    recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
   }
   state.authLoading = false;
   render();
+}
+
+// Record who referred this new user, if a ?ref= code is in the URL
+function recordReferralIfPresent() {
+  try {
+    if (typeof window === 'undefined' || !window.location) return;
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (!refCode || !window.CGFirestore) return;
+    window.CGFirestore.recordReferral(refCode, state.currentUser.email).catch(e => console.log(e));
+  } catch(e) { console.log('Referral record error:', e); }
 }
 
 async function doGoogleSignIn() {
@@ -1913,6 +2015,7 @@ async function doGoogleSignIn() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
+    recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
   }
@@ -1979,7 +2082,6 @@ function startChat(profileId) {
   if (!state.conversations[profileId]) {
     state.conversations[profileId] = [];
     state.messageCounts[profileId] = 0;
-    listenToConversation(profileId);
   }
   state.selectedProfile = null;
   state.activeChat = profileId;
@@ -2062,18 +2164,19 @@ function setupFirestoreListeners() {
 
   const email = state.currentUser.email;
 
-  // Listen to all of this user's conversations
-  Object.keys(state.conversations).forEach(profileId => {
-    const unsub = window.CGFirestore.listenConversation(email, profileId, (data) => {
-      if (!data || !data.messages) return;
+  // Load ALL of this user's conversations upfront (fixes Messages tab being empty after re-login)
+  const unsubAllConvs = window.CGFirestore.listenUserConversations(email, (convs) => {
+    Object.entries(convs).forEach(([profileId, data]) => {
+      if (!data.messages) return;
       const localMsgs = state.conversations[profileId] || [];
-      if (data.messages.length > localMsgs.length) {
+      if (data.messages.length >= localMsgs.length) {
         state.conversations[profileId] = data.messages;
-        render();
+        state.messageCounts[profileId] = data.messages.filter(m => m.role === 'user').length;
       }
     });
-    firestoreUnsubscribers.push(unsub);
+    render();
   });
+  firestoreUnsubscribers.push(unsubAllConvs);
 
   // Listen for unlock status (per-user)
   const unsubUnlock = window.CGFirestore.listenUnlocked(email, (unlocked) => {
@@ -2092,21 +2195,6 @@ function setupFirestoreListeners() {
     render();
   });
   firestoreUnsubscribers.push(unsubEdits);
-}
-
-// Re-subscribe to a specific conversation when user opens a new chat
-function listenToConversation(profileId) {
-  if (!window.CGFirestore || !state.currentUser) return;
-  const email = state.currentUser.email;
-  const unsub = window.CGFirestore.listenConversation(email, profileId, (data) => {
-    if (!data || !data.messages) return;
-    const localMsgs = state.conversations[profileId] || [];
-    if (data.messages.length > localMsgs.length) {
-      state.conversations[profileId] = data.messages;
-      render();
-    }
-  });
-  firestoreUnsubscribers.push(unsub);
 }
 
 function closePaywall(e) {
@@ -2175,6 +2263,60 @@ function saveProfile() {
   render();
 }
 
+// ============================================================
+// REFERRAL PROGRAM
+// ============================================================
+function getReferralCode() {
+  const u = state.currentUser;
+  if (!u) return '';
+  // Use uid if available (Firebase), otherwise derive from email
+  const base = u.uid || u.email.split('@')[0];
+  // Short, URL-safe code: first 8 chars, alphanumeric only
+  return base.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
+}
+
+function getReferralLink() {
+  const code = getReferralCode();
+  const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://connectglobal-tan.vercel.app';
+  return origin + '/?ref=' + code;
+}
+
+function copyReferralLink() {
+  const input = document.getElementById('referral-link');
+  if (!input) return;
+  input.select();
+  input.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    showToast('🔗 Referral link copied!');
+  } catch(e) {
+    // Fallback for modern browsers
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(input.value);
+      showToast('🔗 Referral link copied!');
+    }
+  }
+  render();
+}
+
+function shareReferralWhatsApp() {
+  const link = getReferralLink();
+  const text = encodeURIComponent(
+    `Hey! Join me on ConnectGlobal — meet amazing people from around the world 🌍 Sign up here: ${link}`
+  );
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+function shareReferralGeneric() {
+  const link = getReferralLink();
+  const text = `Join me on ConnectGlobal — meet amazing people from around the world!`;
+  if (navigator.share) {
+    navigator.share({ title: 'ConnectGlobal', text, url: link }).catch(()=>{});
+  } else {
+    copyReferralLink();
+  }
+}
+
 function showToast(msg) {
   state.toast = msg;
 }
@@ -2202,6 +2344,13 @@ render();
 if (window.addEventListener) {
   window.addEventListener('cgFirebaseReady', () => {
     if (window.CGFirestore) {
+      // Fetch once immediately so first render after auth check is correct
+      window.CGFirestore.getProfileEditsOnce().then(edits => {
+        profileEditsCache = edits;
+        render();
+      }).catch(e => console.log('Profile edits fetch error:', e));
+
+      // Then keep listening for live changes
       window.CGFirestore.listenProfileEdits((edits) => {
         profileEditsCache = edits;
         render();
@@ -2210,18 +2359,31 @@ if (window.addEventListener) {
 
     // Restore session on page reload if user is already signed in
     if (window.CGAuth) {
-      let firstCheck = true;
       window.CGAuth.onAuthChange((user) => {
         if (user && state.view === 'auth') {
           state.currentUser = { name: user.name, email: user.email, uid: user.uid, photoURL: user.photoURL || null, bio: '' };
           state.view = 'home';
           setupFirestoreListeners();
-          render();
         }
-        firstCheck = false;
+        state.sessionChecking = false;
+        render();
       });
+    } else {
+      state.sessionChecking = false;
+      render();
     }
   });
+}
+
+// Fallback: if Firebase never signals ready (e.g. CDN blocked), stop the
+// loading spinner after 5 seconds so the user can still use the app
+if (window.setTimeout) {
+  setTimeout(() => {
+    if (state.sessionChecking) {
+      state.sessionChecking = false;
+      render();
+    }
+  }, 5000);
 }
 </script>
 </body>

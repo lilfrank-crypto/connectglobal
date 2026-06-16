@@ -815,6 +815,17 @@
         snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
         callback(items);
       });
+    },
+
+    // User balances: userBalances/{userEmail} -> { balance: 0.00 }
+    async setUserBalance(userEmail, balance) {
+      await setDoc(doc(db, 'userBalances', userEmail), { balance, updatedAt: serverTimestamp() });
+    },
+
+    listenUserBalance(userEmail, callback) {
+      return onSnapshot(doc(db, 'userBalances', userEmail), (snap) => {
+        callback(snap.exists() ? snap.data().balance : 0);
+      });
     }
   };
 
@@ -1144,7 +1155,9 @@ function renderReplyPanel() {
       ${conv.messages.map(m => `
       <div class="msg-bubble ${m.role==='user'?'user':'admin'}">
         <div style="font-size:10px;margin-bottom:4px;opacity:0.6;">${m.role==='user'?conv.userName:conv.profileName} · ${formatAdminTime(m.time)}</div>
-        ${m.content}
+        ${m.content.startsWith('__img__')
+          ? `<img src="${m.content.slice(7)}" style="max-width:180px;border-radius:8px;display:block;" referrerpolicy="no-referrer">`
+          : m.content}
       </div>
       `).join('')}
     </div>
@@ -1791,7 +1804,12 @@ function saveBalance(userId) {
   const user = adminState.users.find(u=>u.id===userId);
   if (user) {
     user.balance = balance;
-    showAdminToast(`✅ Balance updated to $${balance.toFixed(2)} for ${user.name}`);
+    // Write to Firestore using the user's email as the document ID
+    if (window.CGFirestore && user.email) {
+      window.CGFirestore.setUserBalance(user.email, balance)
+        .catch(e => console.log('Balance write error:', e));
+    }
+    showAdminToast('Balance updated to $' + balance.toFixed(2) + ' for ' + user.name);
   }
   adminState.modal = null;
   render();

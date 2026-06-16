@@ -1265,6 +1265,17 @@
         snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
         callback(items);
       });
+    },
+
+    // User balances — set by admin, read by user
+    async setUserBalance(userEmail, balance) {
+      await setDoc(doc(db, 'userBalances', userEmail), { balance, updatedAt: serverTimestamp() });
+    },
+
+    listenUserBalance(userEmail, callback) {
+      return onSnapshot(doc(db, 'userBalances', userEmail), (snap) => {
+        callback(snap.exists() ? snap.data().balance : 0);
+      });
     }
   };
 
@@ -1796,7 +1807,9 @@ function renderChatWindow() {
         </div>
       ` : msgs.map(m => `
         <div class="message ${m.role==='user'?'sent':'received'}">
-          ${m.content}
+          ${m.content.startsWith('__img__')
+            ? `<img src="${m.content.slice(7)}" style="max-width:200px;border-radius:10px;display:block;" referrerpolicy="no-referrer">`
+            : m.content}
           <div class="message-time">${formatTime(m.time)}</div>
         </div>
       `).join('')}
@@ -1804,6 +1817,8 @@ function renderChatWindow() {
     </div>
     
     <div class="chat-input-area">
+      <label for="chat-photo-upload" style="width:44px;height:44px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;flex-shrink:0;">📷</label>
+      <input type="file" id="chat-photo-upload" accept="image/*" style="display:none;" onchange="sendChatPhoto()">
       <textarea class="chat-input" id="chat-input" placeholder="Type a message..." rows="1"
         onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
       <button class="send-btn" onclick="sendMessage()">↑</button>
@@ -1874,11 +1889,18 @@ function renderProfilePage() {
     <div class="page-title" style="margin-bottom:24px;">My Profile</div>
     
     <div class="profile-hero">
-      <img class="profile-hero-photo" src="https://i.pravatar.cc/400?img=51" alt="You">
+      <div style="position:relative;flex-shrink:0;">
+        ${state.currentUser.photoURL
+          ? `<img class="profile-hero-photo" src="${state.currentUser.photoURL}" alt="You" style="object-fit:cover;">`
+          : `<div class="profile-hero-photo" style="background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:white;">${(state.currentUser.name||'?')[0].toUpperCase()}</div>`
+        }
+        <label for="user-photo-upload" style="position:absolute;bottom:0;right:0;width:28px;height:28px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;border:2px solid var(--bg);">📷</label>
+        <input type="file" id="user-photo-upload" accept="image/*" style="display:none;" onchange="uploadUserPhoto()">
+      </div>
       <div>
         <div class="profile-hero-name">${state.currentUser.name}</div>
         <div class="profile-hero-email">${state.currentUser.email}</div>
-        <div style="margin-top:8px;font-size:13px;color:var(--muted);">Member since today · Nairobi, Kenya</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted);">Tap 📷 to add a profile photo</div>
       </div>
     </div>
     
@@ -2106,6 +2128,54 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
+async function sendChatPhoto() {
+  const fileInput = document.getElementById('chat-photo-upload');
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+
+  const profileId = state.activeChat;
+  const profile = getProfile(profileId);
+
+  // Check paywall first
+  const count = state.messageCounts[profileId] || 0;
+  const unlocked = state.unlockedProfiles[profileId] || state.unlockedGlobal;
+  if (!unlocked && count >= 3) { state.paywall = profileId; render(); return; }
+
+  showToast('⏳ Sending photo...');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'connectglobal');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/djcu6tsix/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.secure_url) {
+      // Send as a special image message
+      if (!state.conversations[profileId]) state.conversations[profileId] = [];
+      const msg = {
+        role: 'user',
+        content: '__img__' + data.secure_url,
+        time: new Date().toISOString()
+      };
+      state.conversations[profileId].push(msg);
+      state.messageCounts[profileId] = (state.messageCounts[profileId]||0) + 1;
+      saveConversationToFirestore(profileId, profile);
+      fileInput.value = '';
+      showToast('📷 Photo sent!');
+      render();
+    } else {
+      showToast('⚠️ Could not send photo');
+    }
+  } catch(e) {
+    showToast('⚠️ Error: ' + e.message);
+  }
+}
+
 function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input?.value?.trim();
@@ -2189,6 +2259,15 @@ function setupFirestoreListeners() {
   });
   firestoreUnsubscribers.push(unsubUnlock);
 
+  // Listen for balance updates from admin — reflects instantly on user's dashboard
+  const unsubBalance = window.CGFirestore.listenUserBalance(email, (balance) => {
+    if (balance !== state.balanceUSD) {
+      state.balanceUSD = balance;
+      render();
+    }
+  });
+  firestoreUnsubscribers.push(unsubBalance);
+
   // Listen for profile edits (global, applies to all users)
   const unsubEdits = window.CGFirestore.listenProfileEdits((edits) => {
     profileEditsCache = edits;
@@ -2252,6 +2331,36 @@ async function initiateSTK() {
 
 
 
+async function uploadUserPhoto() {
+  const fileInput = document.getElementById('user-photo-upload');
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+
+  showToast('⏳ Uploading photo...');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'connectglobal');
+
+    const res = await fetch('https://api.cloudinary.com/v1_1/djcu6tsix/image/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.secure_url) {
+      state.currentUser.photoURL = data.secure_url;
+      showToast('✅ Photo updated!');
+      render();
+    } else {
+      showToast('⚠️ Upload failed — try again');
+    }
+  } catch(e) {
+    showToast('⚠️ Upload error: ' + e.message);
+  }
+}
+
 function saveProfile() {
   const name = document.getElementById('edit-name')?.value;
   const email = document.getElementById('edit-email')?.value;
@@ -2302,14 +2411,14 @@ function copyReferralLink() {
 function shareReferralWhatsApp() {
   const link = getReferralLink();
   const text = encodeURIComponent(
-    `Hey! Join me on ConnectGlobal — meet amazing people from around the world 🌍 Sign up here: ${link}`
+    `Hey! Join me on ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍 Sign up using my link and we both get rewarded: ${link}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
 function shareReferralGeneric() {
   const link = getReferralLink();
-  const text = `Join me on ConnectGlobal — meet amazing people from around the world!`;
+  const text = `Hey! Join ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍`;
   if (navigator.share) {
     navigator.share({ title: 'ConnectGlobal', text, url: link }).catch(()=>{});
   } else {

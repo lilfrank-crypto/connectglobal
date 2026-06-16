@@ -1095,7 +1095,17 @@ function renderOverview(revenue, activeUsers, convs) {
 
 function renderMessages() {
   const convKeys = Object.keys(adminState.conversations);
-  
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
+
+  // On mobile: if a conv is open show ONLY the reply panel (full screen)
+  if (isMobile && adminState.activeConv) {
+    return `
+    <div>
+      ${renderReplyPanel(true)}
+    </div>
+    `;
+  }
+
   return `
   <div>
     <div class="page-header">
@@ -1110,14 +1120,16 @@ function renderMessages() {
         </div>
         ${convKeys.map(key => {
           const c = adminState.conversations[key];
+          if (!c || !c.messages) return '';
           const last = c.messages[c.messages.length-1];
+          const lastContent = last?.content?.startsWith('__img__') ? '📷 Photo' : (last?.content || 'No messages');
           return `
           <div class="conv-item ${adminState.activeConv===key?'active':''}" onclick="adminState.activeConv='${key}';render()">
             <img class="conv-avatar" src="${c.profilePhoto}" alt="${c.profileName}" onerror="this.style.display='none'">
             <div style="flex:1;min-width:0;">
               <div class="conv-name">${c.userName}</div>
               <div style="font-size:10px;color:var(--accent2);">as ${c.profileName}</div>
-              <div class="conv-preview">${last?.content || 'No messages'}</div>
+              <div class="conv-preview">${lastContent}</div>
             </div>
           </div>
           `;
@@ -1125,7 +1137,7 @@ function renderMessages() {
         ${convKeys.length === 0 ? '<div class="empty-state"><div class="empty-icon">💬</div><p>No conversations yet</p></div>' : ''}
       </div>
       
-      ${adminState.activeConv ? renderReplyPanel() : `
+      ${adminState.activeConv ? renderReplyPanel(false) : `
         <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);">
           <div style="font-size:48px;opacity:0.3;">💬</div>
           <div>Select a conversation to reply</div>
@@ -1136,14 +1148,15 @@ function renderMessages() {
   `;
 }
 
-function renderReplyPanel() {
+function renderReplyPanel(showBackBtn) {
   const conv = adminState.conversations[adminState.activeConv];
   if (!conv) return '';
   
   return `
-  <div class="reply-panel">
+  <div class="reply-panel" style="${showBackBtn ? 'height:calc(100vh - 130px);display:flex;flex-direction:column;' : ''}">
     <div class="reply-header">
-      <img src="${conv.profilePhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">
+      ${showBackBtn ? `<button onclick="adminState.activeConv=null;render()" style="background:none;border:none;color:var(--accent2);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;margin-right:8px;">← Back</button>` : ''}
+      <img src="${conv.profilePhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
       <div>
         <div style="font-size:13px;font-weight:600;">Replying as ${conv.profileName}</div>
         <div style="font-size:11px;color:var(--muted);">to ${conv.userName}</div>
@@ -1151,8 +1164,8 @@ function renderReplyPanel() {
       <div style="margin-left:auto;font-size:11px;color:var(--success);">● Live</div>
     </div>
     
-    <div class="reply-messages" id="admin-messages">
-      ${conv.messages.map(m => `
+    <div class="reply-messages" id="admin-messages" style="flex:1;overflow-y:auto;">
+      ${(conv.messages || []).map(m => `
       <div class="msg-bubble ${m.role==='user'?'user':'admin'}">
         <div style="font-size:10px;margin-bottom:4px;opacity:0.6;">${m.role==='user'?conv.userName:conv.profileName} · ${formatAdminTime(m.time)}</div>
         ${m.content.startsWith('__img__')
@@ -1162,10 +1175,10 @@ function renderReplyPanel() {
       `).join('')}
     </div>
     
-    <div class="reply-input-area">
+    <div class="reply-input-area" style="flex-shrink:0;">
       <textarea class="reply-input" id="admin-reply-input" placeholder="Type reply as ${conv.profileName}..." rows="2"
         onkeydown="handleAdminKey(event)"></textarea>
-      <button class="send-btn" onclick="sendAdminReply()">Send Reply ↑</button>
+      <button class="send-btn" onclick="sendAdminReply()">Send ↑</button>
     </div>
   </div>
   `;
@@ -1531,10 +1544,14 @@ function renderModal() {
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-title">Edit Balance — ${user.name}</div>
         <div class="input-group">
+          <label class="input-label">User Email (Firestore key)</label>
+          <input type="text" class="form-input" id="modal-balance-email" value="${user.email}" placeholder="user@email.com">
+        </div>
+        <div class="input-group">
           <label class="input-label">New Balance (USD)</label>
           <input type="number" class="form-input" id="modal-balance" value="${user.balance}" step="0.01" min="0">
         </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px;">This appears on the user's profile as their account balance.</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Make sure the email matches exactly what the user signed up with.</div>
         <div class="modal-actions">
           <button class="btn-modal btn-cancel" onclick="adminState.modal=null;render()">Cancel</button>
           <button class="btn-modal btn-confirm" onclick="saveBalance(${user.id})">Save Balance</button>
@@ -1801,15 +1818,29 @@ function revokeAccess(userId) {
 
 function saveBalance(userId) {
   const balance = parseFloat(document.getElementById('modal-balance')?.value || 0);
+  const emailInput = document.getElementById('modal-balance-email')?.value?.trim();
   const user = adminState.users.find(u=>u.id===userId);
+
   if (user) {
     user.balance = balance;
-    // Write to Firestore using the user's email as the document ID
-    if (window.CGFirestore && user.email) {
-      window.CGFirestore.setUserBalance(user.email, balance)
-        .catch(e => console.log('Balance write error:', e));
+    const emailKey = emailInput || user.email;
+
+    if (window.CGFirestore && emailKey) {
+      console.log('Writing balance', balance, 'to userBalances/', emailKey);
+      window.CGFirestore.setUserBalance(emailKey, balance)
+        .then(() => {
+          console.log('Balance write success for', emailKey);
+          showAdminToast('Balance updated to $' + balance.toFixed(2) + ' for ' + user.name);
+          render();
+        })
+        .catch(e => {
+          console.error('Balance write FAILED:', e);
+          showAdminToast('Error writing balance: ' + e.message);
+          render();
+        });
+    } else {
+      showAdminToast('Balance updated locally only (no email key)');
     }
-    showAdminToast('Balance updated to $' + balance.toFixed(2) + ' for ' + user.name);
   }
   adminState.modal = null;
   render();

@@ -2311,18 +2311,22 @@ async function initiateSTK() {
       body: JSON.stringify({
         phone: phone,
         amount: 100,
-        accountRef: 'ConnectGlobal-' + (state.currentUser?.email || 'user')
+        userEmail: state.currentUser?.email || '',
+        userName: state.currentUser?.name || ''
       })
     });
     const data = await res.json();
-    console.log('TinyPesa STK response:', data);
+    console.log('Daraja STK response:', data);
 
     if (!data.success) {
-      showToast('⚠️ Payment request failed — try again');
+      showToast('⚠️ ' + (data.error || 'Payment request failed — try again'));
+      state.stkSent = false;
+      render();
+      return;
     }
   } catch(err) {
     console.log('STK push request error:', err.message);
-    showToast('⚠️ Could not reach payment server');
+    // Still show the waiting screen — Safaricom may have processed it
   }
 
   state.stkSent = true;

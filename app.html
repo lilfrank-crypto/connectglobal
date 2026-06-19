@@ -2303,7 +2303,8 @@ async function initiateSTK() {
     }
   } catch(e) { console.log('Pending unlock save error:', e); }
 
-  // TinyPesa STK Push via our secure serverless function
+  // PayHero STK Push via our secure serverless function
+  const reference = 'CG-' + Date.now();
   try {
     const res = await fetch('/api/stk-push', {
       method: 'POST',
@@ -2311,12 +2312,13 @@ async function initiateSTK() {
       body: JSON.stringify({
         phone: phone,
         amount: 100,
+        reference: reference,
         userEmail: state.currentUser?.email || '',
         userName: state.currentUser?.name || ''
       })
     });
     const data = await res.json();
-    console.log('Daraja STK response:', data);
+    console.log('PayHero STK response:', data);
 
     if (!data.success) {
       showToast('⚠️ ' + (data.error || 'Payment request failed — try again'));

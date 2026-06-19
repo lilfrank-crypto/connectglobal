@@ -21,12 +21,10 @@ export default async function handler(req, res) {
     const payload = {
       amount: Number(amount),
       phone_number: normalizedPhone,
+      channel_id: 9430,
       network_code: '63902',
-      narrative: 'ConnectGlobal Access',
-      currency: 'KES',
-      account_number: reference || 'CGLOBAL',
+      external_reference: reference || 'CGLOBAL',
       callback_url: 'https://connectglobal-tan.vercel.app/api/payhero-callback',
-      payment_service: 'mobile_money',
     };
 
     const response = await fetch('https://backend.payhero.co.ke/api/v2/payments', {

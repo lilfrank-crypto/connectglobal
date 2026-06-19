@@ -23,6 +23,7 @@ export default async function handler(req, res) {
       phone_number: normalizedPhone,
       channel_id: 9523,
       network_code: '63902',
+      provider: 'm-pesa',
       external_reference: reference || 'CGLOBAL',
       callback_url: 'https://connectglobal-tan.vercel.app/api/payhero-callback',
     };

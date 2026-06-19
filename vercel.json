@@ -1,9 +1,6 @@
 {
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/app",   "destination": "/app.html"   }
-  ],
-  "functions": {
-    "api/stk-push.js": { "memory": 256, "maxDuration": 15 }
-  }
+    { "source": "/", "destination": "/app.html" }
+  ]
 }

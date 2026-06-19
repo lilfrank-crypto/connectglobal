@@ -37,10 +37,11 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log('PayHero response:', JSON.stringify(data));
+    console.log('PayHero full response:', JSON.stringify(data));
+    console.log('PayHero status:', response.status);
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.message || 'PayHero error', details: data });
+      return res.status(response.status).json({ error: data.message || 'PayHero error', details: data, payload_sent: payload });
     }
 
     return res.status(200).json({

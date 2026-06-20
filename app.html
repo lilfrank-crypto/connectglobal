@@ -1250,12 +1250,57 @@
       });
     },
 
-    // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt }
+    // Register a user's referral code so it can be looked up later
+    async registerUserCode(userEmail, code) {
+      await setDoc(doc(db, 'userCodes', code), { email: userEmail, registeredAt: serverTimestamp() });
+    },
+
+    // Look up an email by referral code
+    async getEmailByCode(code) {
+      const snap = await getDoc(doc(db, 'userCodes', code));
+      return snap.exists() ? snap.data().email : null;
+    },
+
+    // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt, bonusPaid }
     async recordReferral(referrerCode, newUserEmail) {
+      // Only record once (prevents double-credit on Google re-login)
+      const existing = await getDoc(doc(db, 'referrals', newUserEmail));
+      if (existing.exists()) return; // Already recorded — skip
+
       await setDoc(doc(db, 'referrals', newUserEmail), {
         referrerCode,
         newUserEmail,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        bonusPaid: false
+      });
+
+      // Credit KSh 10 to the new user immediately
+      const newUserBalSnap = await getDoc(doc(db, 'userBalances', newUserEmail));
+      const newUserBal = newUserBalSnap.exists() ? (newUserBalSnap.data().balance || 0) : 0;
+      await setDoc(doc(db, 'userBalances', newUserEmail), {
+        balance: newUserBal + 10,
+        updatedAt: serverTimestamp()
+      });
+
+      // Look up referrer email by code and credit them KSh 10 too
+      try {
+        const referrerEmail = await this.getEmailByCode(referrerCode);
+        if (referrerEmail && referrerEmail !== newUserEmail) {
+          const refBalSnap = await getDoc(doc(db, 'userBalances', referrerEmail));
+          const refBal = refBalSnap.exists() ? (refBalSnap.data().balance || 0) : 0;
+          await setDoc(doc(db, 'userBalances', referrerEmail), {
+            balance: refBal + 10,
+            updatedAt: serverTimestamp()
+          });
+        }
+      } catch(e) { console.log('Referrer credit error:', e); }
+
+      // Mark bonus as paid
+      await setDoc(doc(db, 'referrals', newUserEmail), {
+        referrerCode,
+        newUserEmail,
+        createdAt: serverTimestamp(),
+        bonusPaid: true
       });
     },
 
@@ -2091,6 +2136,9 @@ async function doLogin() {
     state.currentUser = { name: user.name, email: user.email, uid: user.uid, bio: '' };
     state.view = 'home';
     setupFirestoreListeners();
+    // Register this user's referral code so others can find them
+    const myCode = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
+    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode).catch(()=>{});
   } catch(e) {
     state.authError = friendlyAuthError(e);
   }
@@ -2116,6 +2164,9 @@ async function doSignup() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
+    // Register this user's referral code
+    const myCode2 = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
+    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode2).catch(()=>{});
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
@@ -2131,7 +2182,11 @@ function recordReferralIfPresent() {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
     if (!refCode || !window.CGFirestore) return;
-    window.CGFirestore.recordReferral(refCode, state.currentUser.email).catch(e => console.log(e));
+    window.CGFirestore.recordReferral(refCode, state.currentUser.email)
+      .then(() => {
+        showToast('🎁 Referral bonus: KSh 10 added to your balance!');
+      })
+      .catch(e => console.log(e));
   } catch(e) { console.log('Referral record error:', e); }
 }
 
@@ -2147,6 +2202,9 @@ async function doGoogleSignIn() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
+    // Register this user's referral code
+    const myCode3 = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
+    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode3).catch(()=>{});
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);

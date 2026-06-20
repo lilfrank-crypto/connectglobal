@@ -1408,6 +1408,7 @@ let state = {
   filter: 'All',
   shuffleSeed: Math.floor(Math.random() * 1000000),
   paywall: null,       // profileId pending unlock
+  withdrawModal: false,
   paywallPhone: '',
   stkSent: false,
   toast: null,
@@ -1597,6 +1598,7 @@ function renderApp() {
     
     ${state.selectedProfile ? renderProfileModal() : ''}
     ${state.paywall ? renderPaywallModal() : ''}
+    ${state.withdrawModal ? renderWithdrawModal() : ''}
     ${state.toast ? `<div class="toast">${state.toast}</div>` : ''}
   </div>
   `;
@@ -1827,6 +1829,113 @@ function renderChatWindow() {
   `;
 }
 
+
+function renderWithdrawModal() {
+  const balKES = state.balanceUSD * 130; // approx KES conversion
+  return `
+  <div class="modal-overlay" onclick="state.withdrawModal=false;render()" style="z-index:1000;">
+    <div class="paywall-modal" onclick="event.stopPropagation()" style="max-width:420px;width:92%;">
+      <div class="paywall-icon">💸</div>
+      <div class="paywall-title">Withdraw Funds</div>
+      <div class="paywall-text">Your balance: <strong>$${state.balanceUSD.toFixed(2)}</strong></div>
+
+      <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--muted);line-height:1.8;text-align:left;">
+        <strong style="color:white;">Withdrawal Fees:</strong><br>
+        • Up to KSh 50 → <span style="color:var(--online);">Free</span><br>
+        • KSh 51 – KSh 500 → KSh 100 fee<br>
+        • KSh 501 and above → KSh 200 fee
+      </div>
+
+      <div style="margin-bottom:14px;text-align:left;">
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Amount to withdraw (KSh)</label>
+        <input type="number" id="withdraw-amount" placeholder="e.g. 200" min="1" oninput="updateWithdrawFeePreview()"
+          style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:15px;box-sizing:border-box;">
+      </div>
+
+      <div style="margin-bottom:18px;text-align:left;">
+        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">M-Pesa phone number</label>
+        <div style="display:flex;gap:8px;">
+          <input type="text" value="+254" readonly style="width:70px;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:var(--muted);font-size:14px;text-align:center;">
+          <input type="tel" id="withdraw-phone" placeholder="7XX XXX XXX" maxlength="9"
+            style="flex:1;padding:12px 16px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:15px;">
+        </div>
+      </div>
+
+      <div id="withdraw-fee-preview" style="margin-bottom:16px;font-size:13px;color:var(--muted);min-height:20px;"></div>
+
+      <button class="btn-primary" onclick="submitWithdrawal()" style="width:100%;margin-bottom:10px;">Request Withdrawal</button>
+      <button class="btn-close" onclick="state.withdrawModal=false;render()" style="width:100%;">Cancel</button>
+    </div>
+  </div>
+  `;
+}
+
+function getWithdrawFee(amount) {
+  if (amount <= 50) return 0;
+  if (amount <= 500) return 100;
+  return 200;
+}
+
+
+function updateWithdrawFeePreview() {
+  const el = document.getElementById('withdraw-fee-preview');
+  const amount = parseFloat(document.getElementById('withdraw-amount')?.value || 0);
+  if (!el || !amount || amount <= 0) { if(el) el.innerHTML = ''; return; }
+  const fee = getWithdrawFee(amount);
+  const total = amount + fee;
+  const balKES = state.balanceUSD * 130;
+  const canAfford = total <= balKES;
+  el.innerHTML = fee === 0
+    ? '<span style="color:#22c55e;">✅ No fee — you receive KSh ' + amount + '</span>'
+    : '<span style="color:#f59e0b;">⚠️ Fee: KSh ' + fee + ' — Total deducted: KSh ' + total + '</span>'
+      + (canAfford ? '' : '<br><span style="color:#ef4444;">❌ Insufficient balance</span>');
+}
+
+async function submitWithdrawal() {
+  const amountInput = document.getElementById('withdraw-amount');
+  const phoneInput = document.getElementById('withdraw-phone');
+  const amount = parseFloat(amountInput?.value || 0);
+  const phone = phoneInput?.value?.trim() || '';
+
+  if (!amount || amount <= 0) { showToast('Enter a valid amount'); return; }
+  if (phone.length < 9) { showToast('Enter a valid M-Pesa number'); return; }
+
+  const fee = getWithdrawFee(amount);
+  const totalDeducted = amount + fee;
+  const balKES = state.balanceUSD * 130;
+
+  if (totalDeducted > balKES) {
+    showToast('Insufficient balance. Need KSh ' + totalDeducted + ' (amount + KSh ' + fee + ' fee)');
+    return;
+  }
+
+  const fullPhone = '254' + phone.replace(/^0/, '');
+  const user = state.currentUser;
+
+  try {
+    // Save withdrawal request to Firestore
+    const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    const db = getFirestore();
+    await addDoc(collection(db, 'withdrawalRequests'), {
+      userEmail: user.email,
+      userName: user.name || user.email,
+      amount,
+      fee,
+      totalDeducted,
+      phone: fullPhone,
+      status: 'pending',
+      requestedAt: serverTimestamp(),
+    });
+
+    state.withdrawModal = false;
+    render();
+    showToast('✅ Withdrawal request submitted! We will process it shortly.');
+  } catch (err) {
+    console.error('Withdrawal error:', err);
+    showToast('Error submitting request. Please try again.');
+  }
+}
+
 function renderDashboard() {
   const chatCount = Object.keys(state.conversations).length;
   const msgCount = Object.values(state.messageCounts).reduce((a,b)=>a+b,0);
@@ -1839,6 +1948,7 @@ function renderDashboard() {
       <div class="balance-label">💵 Account Balance</div>
       <div class="balance-amount">$${state.balanceUSD.toFixed(2)}</div>
       <div class="balance-sub">✓ Account Active</div>
+      <button onclick="state.withdrawModal=true;render()" style="margin-top:16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:10px 24px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">💸 Withdraw Funds</button>
     </div>
     
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" class="stats-grid-mobile">

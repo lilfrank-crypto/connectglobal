@@ -826,6 +826,18 @@
       return onSnapshot(doc(db, 'userBalances', userEmail), (snap) => {
         callback(snap.exists() ? snap.data().balance : 0);
       });
+    },
+
+    listenWithdrawals(callback) {
+      return onSnapshot(collection(db, 'withdrawalRequests'), (snap) => {
+        const items = [];
+        snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+        callback(items);
+      });
+    },
+
+    async updateWithdrawal(id, status) {
+      await setDoc(doc(db, 'withdrawalRequests', id), { status, resolvedAt: serverTimestamp() }, { merge: true });
     }
   };
 
@@ -859,6 +871,7 @@ let adminState = {
   conversations: {},
   transactions: [],
   referrals: [],
+  withdrawals: [],
 
   pendingUnlocks: [], // { userId, userName, phone, time } — users who paid, waiting for admin unlock
   unlockedUsers: {}, // userId -> true
@@ -952,6 +965,10 @@ function renderAdmin() {
       <button class="nav-link ${adminState.page==='transactions'?'active':''}" onclick="setPage('transactions')">
         <span>💰</span> Transactions
       </button>
+      <button class="nav-link ${adminState.page==='withdrawals'?'active':''}" onclick="setPage('withdrawals')">
+        💸 Withdrawals
+        <span style="margin-left:auto;font-size:11px;color:#f59e0b;">${adminState.withdrawals.filter(w=>w.status==='pending').length||''}</span>
+      </button>
       <button class="nav-link ${adminState.page==='analytics'?'active':''}" onclick="setPage('analytics')">
         <span>📈</span> Analytics
       </button>
@@ -971,6 +988,7 @@ function renderAdmin() {
       ${adminState.page==='profiles' ? renderProfiles() : ''}
       ${adminState.page==='transactions' ? renderTransactions() : ''}
       ${adminState.page==='analytics' ? renderAnalytics(totalRevenue) : ''}
+      ${adminState.page==='withdrawals' ? renderWithdrawals() : ''}
     </main>
 
     <!-- BOTTOM NAV (mobile only) -->
@@ -2029,6 +2047,16 @@ function setupAdminFirestoreListeners() {
   });
   adminUnsubscribers.push(unsubTx);
 
+  // Withdrawal requests — real-time
+  const unsubWd = window.CGFirestore.listenWithdrawals((items) => {
+    adminState.withdrawals = items.map(w => ({
+      ...w,
+      time: w.requestedAt?.toDate ? w.requestedAt.toDate() : new Date()
+    })).sort((a,b) => b.time - a.time);
+    render();
+  });
+  adminUnsubscribers.push(unsubWd);
+
   // Referrals — real-time
   const unsubRef = window.CGFirestore.listenReferrals((items) => {
     adminState.referrals = items;
@@ -2036,6 +2064,85 @@ function setupAdminFirestoreListeners() {
   });
   adminUnsubscribers.push(unsubRef);
 }
+
+
+// ============================================================
+// WITHDRAWALS
+// ============================================================
+function renderWithdrawals() {
+  const pending = adminState.withdrawals.filter(w => w.status === 'pending');
+  const done = adminState.withdrawals.filter(w => w.status !== 'pending');
+
+  return `
+  <div class="content-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div class="section-title">💸 Withdrawal Requests</div>
+      <span style="font-size:13px;color:var(--muted);">${adminState.withdrawals.length} total</span>
+    </div>
+
+    ${pending.length === 0 ? '' : `
+    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:14px;padding:16px;margin-bottom:24px;">
+      <div style="font-weight:600;color:#fbbf24;margin-bottom:12px;">⏳ ${pending.length} Pending Request${pending.length>1?'s':''}</div>
+      ${pending.map(w => `
+        <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:14px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-weight:600;font-size:15px;">${w.userName || w.userEmail}</div>
+              <div style="font-size:12px;color:var(--muted);">${w.userEmail}</div>
+              <div style="font-size:13px;margin-top:6px;">
+                📱 <strong>${w.phone}</strong> &nbsp;|&nbsp;
+                💰 Withdraw: <strong>KSh ${w.amount}</strong> &nbsp;|&nbsp;
+                Fee: <strong style="color:#f59e0b;">KSh ${w.fee}</strong> &nbsp;|&nbsp;
+                Send: <strong style="color:#22c55e;">KSh ${w.amount}</strong>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">${w.time ? w.time.toLocaleString() : ''}</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="approveWithdrawal('${w.id}')" style="background:#22c55e;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">✅ Approve</button>
+              <button onclick="rejectWithdrawal('${w.id}')" style="background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    `}
+
+    ${done.length === 0 ? '<div style="color:var(--muted);font-size:14px;text-align:center;padding:40px 0;">No completed withdrawals yet</div>' : `
+    <div class="section-title" style="margin-bottom:12px;">History</div>
+    <div style="overflow-x:auto;">
+      <table class="users-table">
+        <thead><tr>
+          <th>User</th><th>Phone</th><th>Amount</th><th>Fee</th><th>Status</th><th>Date</th>
+        </tr></thead>
+        <tbody>
+          ${done.map(w => `<tr>
+            <td><div style="font-weight:500;">${w.userName||w.userEmail}</div><div style="font-size:11px;color:var(--muted);">${w.userEmail}</div></td>
+            <td>${w.phone}</td>
+            <td>KSh ${w.amount}</td>
+            <td>KSh ${w.fee}</td>
+            <td><span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:${w.status==='approved'?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};color:${w.status==='approved'?'#22c55e':'#ef4444'};">${w.status}</span></td>
+            <td style="font-size:12px;color:var(--muted);">${w.time ? w.time.toLocaleDateString() : ''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    `}
+  </div>
+  `;
+}
+
+async function approveWithdrawal(id) {
+  if (!window.CGFirestore) return;
+  await window.CGFirestore.updateWithdrawal(id, 'approved');
+  showAdminToast('✅ Withdrawal approved — remember to send KSh manually via M-Pesa');
+}
+
+async function rejectWithdrawal(id) {
+  if (!window.CGFirestore) return;
+  await window.CGFirestore.updateWithdrawal(id, 'rejected');
+  showAdminToast('❌ Withdrawal rejected');
+}
+
 
 function showAdminToast(msg) {
   adminState.toast = msg;

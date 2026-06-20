@@ -331,9 +331,16 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    height: 660px;
+    height: 640px;
     overflow: hidden;
     margin-bottom: 20px;
+  }
+
+  /* Make the reply panel grid cell a proper flex container */
+  .chat-panel > .reply-panel,
+  .chat-panel > div:last-child {
+    overflow: hidden;
+    min-height: 0;
   }
 
   .conv-list {
@@ -391,10 +398,13 @@
   .reply-panel {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .reply-header {
-    padding: 16px 18px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -406,22 +416,25 @@
   .reply-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px;
+    overflow-x: hidden;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
+    min-height: 0;
   }
 
   .reply-messages::-webkit-scrollbar { width: 4px; }
   .reply-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .msg-bubble {
-    max-width: 70%;
-    padding: 12px 16px;
-    border-radius: 18px;
+    max-width: 72%;
+    padding: 10px 14px;
+    border-radius: 16px;
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.55;
     word-break: break-word;
+    flex-shrink: 0;
   }
 
   .msg-bubble.user {
@@ -438,14 +451,14 @@
     border-bottom-right-radius: 4px;
   }
 
-  .msg-meta { font-size: 10px; color: var(--muted); margin-top: 5px; opacity: 0.7; }
+  .msg-meta { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.7; }
 
   .reply-input-area {
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     background: var(--bg);
     flex-shrink: 0;
   }
@@ -460,26 +473,28 @@
     flex: 1;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 14px;
+    border-radius: 10px;
+    padding: 9px 12px;
     color: var(--text);
     font-size: 13px;
     font-family: 'Inter', sans-serif;
     outline: none;
     resize: none;
-    min-height: 44px;
-    max-height: 110px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 90px;
+    box-sizing: border-box;
   }
 
-  .reply-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(139,92,246,0.15); }
+  .reply-input:focus { border-color: var(--accent2); outline: none; }
 
   .photo-btn {
-    width: 40px; height: 40px;
-    border-radius: 10px;
+    width: 38px; height: 38px;
+    border-radius: 8px;
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--muted);
-    font-size: 18px;
+    font-size: 17px;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
@@ -488,19 +503,21 @@
   .photo-btn:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(139,92,246,0.1); }
 
   .send-btn {
-    padding: 10px 18px;
+    padding: 0 16px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     color: white;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
+    transition: opacity 0.2s;
     white-space: nowrap;
-    height: 40px;
+    height: 38px;
+    flex-shrink: 0;
   }
+  .send-btn:hover { opacity: 0.85; }
 
   /* MODAL */
   .modal-overlay {
@@ -703,12 +720,13 @@
     /* Chat panel stacks vertically */
     .chat-panel {
       grid-template-columns: 1fr;
-      grid-template-rows: 260px 1fr;
-      height: calc(100vh - 140px);
+      grid-template-rows: 220px 1fr;
+      height: calc(100vh - 130px);
     }
-    .conv-list { border-right: none; border-bottom: 1px solid var(--border); }
+    .conv-list { border-right: none; border-bottom: 1px solid var(--border); overflow-y: auto; }
     .conv-preview { max-width: 200px; }
     .conv-badge { top: 8px; right: 8px; }
+    .reply-panel { height: 100%; }
 
     /* Profile grid 2 columns */
     .profiles-grid-admin {
@@ -1316,39 +1334,39 @@ function renderReplyPanel(showBackBtn) {
   if (!conv) return '';
   
   return `
-  <div class="reply-panel" style="${showBackBtn ? 'height:calc(100vh - 130px);display:flex;flex-direction:column;' : ''}">
+  <div class="reply-panel" style="${showBackBtn ? 'position:fixed;inset:0;z-index:50;background:var(--bg);' : 'height:100%;'}">
     <div class="reply-header">
       ${showBackBtn ? `<button onclick="adminState.activeConv=null;render()" style="background:none;border:none;color:var(--accent2);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;margin-right:8px;">← Back</button>` : ''}
-      <img src="${conv.profilePhoto}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+      <img src="${conv.profilePhoto}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
       <div>
         <div style="font-size:13px;font-weight:700;">Replying as ${conv.profileName}</div>
-        <div style="font-size:11px;color:var(--muted);">to ${conv.userName} · ${conv.messages.length} messages</div>
+        <div style="font-size:11px;color:var(--muted);">to ${conv.userName} · ${conv.messages.length} msgs</div>
       </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <div style="margin-left:auto;">
         <span style="font-size:11px;color:var(--success);">● Live</span>
       </div>
     </div>
-    
-    <div class="reply-messages" id="admin-messages" style="flex:1;overflow-y:auto;">
+
+    <div class="reply-messages" id="admin-messages">
       ${(conv.messages || []).map(m => `
       <div class="msg-bubble ${m.role==='user'?'user':'admin'}">
         <div class="msg-meta">${m.role==='user' ? '👤 ' + conv.userName : '🌸 ' + conv.profileName} · ${formatAdminTime(m.time)}</div>
         ${m.content.startsWith('__img__')
-          ? `<img src="${m.content.slice(7)}" style="max-width:200px;border-radius:10px;display:block;margin-top:6px;" referrerpolicy="no-referrer">`
-          : `<div style="margin-top:4px;">${m.content}</div>`}
+          ? `<img src="${m.content.slice(7)}" style="max-width:180px;border-radius:8px;display:block;margin-top:4px;" referrerpolicy="no-referrer">`
+          : `<div>${m.content}</div>`}
       </div>
       `).join('')}
     </div>
-    
-    <div class="reply-input-area" style="flex-shrink:0;">
+
+    <div class="reply-input-area">
       <div class="reply-input-row">
-        <textarea class="reply-input" id="admin-reply-input" placeholder="Reply as ${conv.profileName}..." rows="2"
+        <textarea class="reply-input" id="admin-reply-input" placeholder="Reply as ${conv.profileName}..."
           onkeydown="handleAdminKey(event)"></textarea>
         <button class="photo-btn" onclick="document.getElementById('admin-photo-input').click()" title="Send photo">📷</button>
         <button class="send-btn" onclick="sendAdminReply()">Send ↑</button>
       </div>
       <input type="file" id="admin-photo-input" accept="image/*" style="display:none;" onchange="sendAdminPhoto(this)">
-      <div id="admin-photo-status" style="font-size:11px;color:var(--muted);min-height:14px;"></div>
+      <div id="admin-photo-status" style="font-size:11px;color:var(--muted);height:14px;line-height:14px;"></div>
     </div>
   </div>
   `;

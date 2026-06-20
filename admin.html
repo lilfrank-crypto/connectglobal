@@ -886,6 +886,74 @@ let adminState = {
 
 const ADMIN_CREDS = { user: 'admin', pass: 'franklink.01' };
 
+
+// ============================================================
+// NOTIFICATIONS — only fire on confirmed payments
+// ============================================================
+let _lastPaymentCount = 0;
+let _lastMsgCount = 0;
+let _notifAudio = null;
+
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function sendPushNotif(title, body, emoji = '💰') {
+  playNotifSound();
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(emoji + ' ' + title, {
+      body,
+      icon: 'https://i.pravatar.cc/64?img=1',
+      badge: 'https://i.pravatar.cc/32?img=1',
+      tag: 'cg-admin-' + Date.now(),
+      requireInteraction: true,
+    });
+  }
+  // Also show in-app toast with special style
+  showAdminToast(emoji + ' ' + title + ' — ' + body);
+}
+
+function checkForNewPayments(newUnlocks) {
+  // Only notify when count INCREASES (new confirmed payment arrived)
+  if (newUnlocks.length > _lastPaymentCount) {
+    const newest = newUnlocks[newUnlocks.length - 1];
+    sendPushNotif(
+      'New Payment Received!',
+      (newest?.userName || 'A user') + ' just paid KSh 100 — tap to unlock their access',
+      '💰'
+    );
+  }
+  _lastPaymentCount = newUnlocks.length;
+}
+
+function checkForNewMessages(convs) {
+  const total = Object.values(convs).reduce((sum, c) => sum + (c.messages?.filter(m=>m.role==='user').length||0), 0);
+  if (total > _lastMsgCount && _lastMsgCount > 0) {
+    sendPushNotif('New Message!', 'A user just sent you a message', '💬');
+  }
+  _lastMsgCount = total;
+}
+
+
 // ============================================================
 // RENDER
 // ============================================================
@@ -1018,8 +1086,22 @@ function renderAdmin() {
 }
 
 function renderOverview(revenue, activeUsers, convs) {
+  const notifBanner = (typeof Notification !== 'undefined' && Notification.permission === 'default') ? `
+    <div onclick="Notification.requestPermission().then(()=>render())" style="cursor:pointer;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:28px;">🔔</span>
+      <div><div style="font-weight:700;font-size:14px;">Enable Notifications</div>
+      <div style="font-size:12px;opacity:0.8;">Tap to get instant alerts when users pay or message you</div></div>
+      <span style="margin-left:auto;font-size:20px;">→</span>
+    </div>
+  ` : (typeof Notification !== 'undefined' && Notification.permission === 'granted') ? `
+    <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#22c55e;">
+      🔔 <strong>Notifications active</strong> — instant alerts for payments & messages
+    </div>
+  ` : '';
+
   return `
   <div>
+    ${notifBanner}
     <div class="page-header">
       <div>
         <div class="page-title">Dashboard Overview</div>
@@ -1242,61 +1324,61 @@ function renderUsers() {
     </div>
     ` : ''}
     
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th>Messages</th>
-            <th>Balance (USD)</th>
-            <th>Access</th>
-            <th>Last Active</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">No users yet. Users appear here when they sign up.</td></tr>` : ''}
-          ${filtered.map(u => `
-          <tr>
-            <td>
-              <div class="user-cell">
-                <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">
-                  ${u.name[0]}
-                </div>
-                <div>
-                  <div style="font-weight:600;font-size:13px;">${u.name}</div>
-                  <div style="font-size:11px;color:var(--muted);">${u.email}</div>
-                </div>
-              </div>
-            </td>
-            <td style="font-size:12px;color:var(--muted);">${u.phone}</td>
-            <td><span class="status-badge ${u.status}">${u.status}</span></td>
-            <td><span style="font-weight:600;">${u.msgCount}</span></td>
-            <td>
-              <span style="font-weight:700;color:var(--success);">$${u.balance.toFixed(2)}</span>
-              <button class="action-btn success" onclick="showEditBalance(${u.id})" style="margin-left:6px;">Edit</button>
-            </td>
-            <td>
-              ${adminState.unlockedUsers[u.id] 
-                ? '<span class="status-badge unlocked">✓ Unlocked</span>' 
-                : '<span class="status-badge inactive">Locked</span>'}
-              <button class="action-btn ${adminState.unlockedUsers[u.id]?'danger':'success'}" 
-                onclick="${adminState.unlockedUsers[u.id]?`revokeAccess(${u.id})`:`grantAccess(${u.id})`}" style="margin-left:6px;">
-                ${adminState.unlockedUsers[u.id]?'Revoke':'Unlock'}
-              </button>
-            </td>
-            <td style="font-size:12px;color:var(--muted);">${u.lastActive}</td>
-            <td>
-              <button class="action-btn edit" onclick="showEditUser(${u.id})">Edit</button>
-              <button class="action-btn danger" onclick="toggleUserStatus(${u.id})">${u.status==='active'?'Suspend':'Activate'}</button>
-            </td>
-          </tr>
-          `).join('')}
-        </tbody>
-      </table>
+    ${filtered.length === 0 ? `
+      <div style="text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:12px;">👥</div>
+        <div style="font-size:15px;">No users yet</div>
+        <div style="font-size:13px;margin-top:6px;">Users appear here when they sign up</div>
+      </div>
+    ` : `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${filtered.map(u => `
+      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.07);">
+        <!-- User header -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;">
+            ${u.name ? u.name[0] : '?'}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:15px;">${u.name}</div>
+            <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email}</div>
+          </div>
+          <span class="status-badge ${u.status}">${u.status}</span>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;">${u.msgCount}</div>
+            <div style="font-size:10px;color:var(--muted);">Messages</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:var(--success);">$${u.balance.toFixed(2)}</div>
+            <div style="font-size:10px;color:var(--muted);">Balance</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
+            <div style="font-size:16px;">${adminState.unlockedUsers[u.email] || adminState.unlockedUsers[u.id] ? '🔓' : '🔒'}</div>
+            <div style="font-size:10px;color:var(--muted);">${adminState.unlockedUsers[u.email] || adminState.unlockedUsers[u.id] ? 'Unlocked' : 'Locked'}</div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="action-btn edit" onclick="showEditUser(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">✏️ Edit</button>
+          <button class="action-btn success" onclick="showEditBalance(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">💰 Balance</button>
+          <button class="action-btn ${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?'danger':'success'}" 
+            onclick="${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?`revokeAccess(${u.id})`:`grantAccess(${u.id})`}" 
+            style="padding:10px;border-radius:10px;font-size:13px;">
+            ${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?'🔒 Revoke':'🔓 Unlock'}
+          </button>
+          <button class="action-btn danger" onclick="toggleUserStatus(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">
+            ${u.status==='active'?'⛔ Suspend':'✅ Activate'}
+          </button>
+        </div>
+      </div>
+      `).join('')}
     </div>
+    `}
   </div>
   `;
 }
@@ -1685,6 +1767,7 @@ function doAdminLogin() {
     if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
       adminState.view = 'dashboard';
       setupAdminFirestoreListeners();
+      requestNotifPermission();
       render();
     } else {
       showAdminToast('Invalid credentials. Please try again.');
@@ -1986,6 +2069,7 @@ function setupAdminFirestoreListeners() {
 
   // All conversations — real-time
   const unsubConvs = window.CGFirestore.listenAllConversations((convs) => {
+    checkForNewMessages(convs);
     adminState.conversations = convs;
 
     // Register/update users list based on conversations
@@ -2018,6 +2102,7 @@ function setupAdminFirestoreListeners() {
 
   // Pending unlocks — real-time
   const unsubPending = window.CGFirestore.listenPendingUnlocks((items) => {
+    checkForNewPayments(items);
     adminState.pendingUnlocks = items;
     render();
   });

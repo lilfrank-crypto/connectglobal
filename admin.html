@@ -326,21 +326,14 @@
   /* CHAT PANEL */
   .chat-panel {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 280px 1fr;
     gap: 0;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    height: 640px;
+    height: 600px;
     overflow: hidden;
     margin-bottom: 20px;
-  }
-
-  /* Make the reply panel grid cell a proper flex container */
-  .chat-panel > .reply-panel,
-  .chat-panel > div:last-child {
-    overflow: hidden;
-    min-height: 0;
   }
 
   .conv-list {
@@ -352,55 +345,33 @@
   .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .conv-item {
-    padding: 14px 16px;
+    padding: 12px 16px;
     cursor: pointer;
     border-bottom: 1px solid rgba(37,37,56,0.5);
     transition: background 0.15s;
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    position: relative;
   }
 
   .conv-item:hover { background: var(--surface2); }
-  .conv-item.active { background: rgba(109,40,217,0.12); border-left: 3px solid var(--accent2); padding-left: 13px; }
+  .conv-item.active { background: rgba(109,40,217,0.1); }
 
   .conv-avatar {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
   }
 
-  .conv-name { font-size: 13px; font-weight: 700; }
-  .conv-sub { font-size: 10px; color: var(--accent2); margin-top: 1px; }
-  .conv-preview { font-size: 11px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-
-  .conv-badge {
-    position: absolute;
-    top: 10px; right: 12px;
-    background: #ef4444;
-    color: white;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 7px;
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.55; }
-  }
+  .conv-name { font-size: 13px; font-weight: 600; }
+  .conv-preview { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 
   /* REPLY PANEL */
   .reply-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
   }
 
   .reply-header {
@@ -408,116 +379,81 @@
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: var(--bg);
-    flex-shrink: 0;
   }
 
   .reply-messages {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    min-height: 0;
+    gap: 10px;
   }
 
   .reply-messages::-webkit-scrollbar { width: 4px; }
   .reply-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .msg-bubble {
-    max-width: 72%;
+    max-width: 75%;
     padding: 10px 14px;
-    border-radius: 16px;
+    border-radius: 14px;
     font-size: 13px;
-    line-height: 1.55;
-    word-break: break-word;
-    flex-shrink: 0;
+    line-height: 1.5;
   }
 
   .msg-bubble.user {
-    background: rgba(109,40,217,0.15);
-    border: 1px solid rgba(109,40,217,0.25);
+    background: rgba(109,40,217,0.2);
+    border: 1px solid rgba(109,40,217,0.3);
     align-self: flex-start;
     border-bottom-left-radius: 4px;
   }
 
   .msg-bubble.admin {
-    background: linear-gradient(135deg, rgba(109,40,217,0.3), rgba(139,92,246,0.3));
+    background: linear-gradient(135deg, rgba(109,40,217,0.4), rgba(139,92,246,0.4));
     border: 1px solid rgba(139,92,246,0.3);
     align-self: flex-end;
     border-bottom-right-radius: 4px;
   }
 
-  .msg-meta { font-size: 10px; color: var(--muted); margin-top: 4px; opacity: 0.7; }
+  .msg-meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
 
   .reply-input-area {
-    padding: 10px 12px;
+    padding: 14px 16px;
     border-top: 1px solid var(--border);
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: var(--bg);
-    flex-shrink: 0;
-  }
-
-  .reply-input-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
+    gap: 10px;
   }
 
   .reply-input {
     flex: 1;
-    background: var(--surface);
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 9px 12px;
+    padding: 10px 14px;
     color: var(--text);
     font-size: 13px;
     font-family: 'Inter', sans-serif;
     outline: none;
     resize: none;
-    height: 40px;
-    min-height: 40px;
-    max-height: 90px;
-    box-sizing: border-box;
   }
 
-  .reply-input:focus { border-color: var(--accent2); outline: none; }
-
-  .photo-btn {
-    width: 38px; height: 38px;
-    border-radius: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 17px;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.2s;
-  }
-  .photo-btn:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(139,92,246,0.1); }
+  .reply-input:focus { border-color: var(--accent2); }
 
   .send-btn {
-    padding: 0 16px;
+    padding: 10px 20px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     color: white;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
     white-space: nowrap;
-    height: 38px;
-    flex-shrink: 0;
   }
-  .send-btn:hover { opacity: 0.85; }
 
   /* MODAL */
   .modal-overlay {
@@ -717,16 +653,13 @@
 
     .search-input { width: 100%; }
 
-    /* Chat panel stacks vertically */
+    /* Chat panel — hidden on mobile, handled by JS renderMessages */
     .chat-panel {
-      grid-template-columns: 1fr;
-      grid-template-rows: 220px 1fr;
-      height: calc(100vh - 130px);
+      display: flex;
+      flex-direction: column;
+      height: auto;
     }
-    .conv-list { border-right: none; border-bottom: 1px solid var(--border); overflow-y: auto; }
-    .conv-preview { max-width: 200px; }
-    .conv-badge { top: 8px; right: 8px; }
-    .reply-panel { height: 100%; }
+    .conv-list { border-right: none; border-bottom: none; width: 100%; }
 
     /* Profile grid 2 columns */
     .profiles-grid-admin {
@@ -893,18 +826,6 @@
       return onSnapshot(doc(db, 'userBalances', userEmail), (snap) => {
         callback(snap.exists() ? snap.data().balance : 0);
       });
-    },
-
-    listenWithdrawals(callback) {
-      return onSnapshot(collection(db, 'withdrawalRequests'), (snap) => {
-        const items = [];
-        snap.forEach(d => items.push({ id: d.id, ...d.data() }));
-        callback(items);
-      });
-    },
-
-    async updateWithdrawal(id, status) {
-      await setDoc(doc(db, 'withdrawalRequests', id), { status, resolvedAt: serverTimestamp() }, { merge: true });
     }
   };
 
@@ -938,7 +859,6 @@ let adminState = {
   conversations: {},
   transactions: [],
   referrals: [],
-  withdrawals: [],
 
   pendingUnlocks: [], // { userId, userName, phone, time } — users who paid, waiting for admin unlock
   unlockedUsers: {}, // userId -> true
@@ -949,88 +869,9 @@ let adminState = {
   toast: null,
   search: '',
   editUser: null,  // user being edited in modal
-  newMsgConvs: {}, // convKey -> true if has unread user message since admin last opened
 };
 
 const ADMIN_CREDS = { user: 'admin', pass: 'franklink.01' };
-
-
-// ============================================================
-// NOTIFICATIONS — only fire on confirmed payments
-// ============================================================
-let _lastPaymentCount = 0;
-let _lastMsgCount = 0;
-let _notifAudio = null;
-
-function requestNotifPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-function playNotifSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.4, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.4);
-  } catch(e) {}
-}
-
-function sendPushNotif(title, body, emoji = '💰') {
-  playNotifSound();
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(emoji + ' ' + title, {
-      body,
-      icon: 'https://i.pravatar.cc/64?img=1',
-      badge: 'https://i.pravatar.cc/32?img=1',
-      tag: 'cg-admin-' + Date.now(),
-      requireInteraction: true,
-    });
-  }
-  // Also show in-app toast with special style
-  showAdminToast(emoji + ' ' + title + ' — ' + body);
-}
-
-function checkForNewPayments(newUnlocks) {
-  // Only notify when count INCREASES (new confirmed payment arrived)
-  if (newUnlocks.length > _lastPaymentCount) {
-    const newest = newUnlocks[newUnlocks.length - 1];
-    sendPushNotif(
-      'New Payment Received!',
-      (newest?.userName || 'A user') + ' just paid KSh 100 — tap to unlock their access',
-      '💰'
-    );
-  }
-  _lastPaymentCount = newUnlocks.length;
-}
-
-function checkForNewMessages(convs) {
-  const total = Object.values(convs).reduce((sum, c) => sum + (c.messages?.filter(m=>m.role==='user').length||0), 0);
-
-  // Always mark convs where the last message is from the user (needs a reply)
-  Object.entries(convs).forEach(([key, c]) => {
-    if (!c.messages || c.messages.length === 0) return;
-    const lastMsg = c.messages[c.messages.length - 1];
-    if (lastMsg.role === 'user' && key !== adminState.activeConv) {
-      adminState.newMsgConvs[key] = true;
-    }
-  });
-
-  if (total > _lastMsgCount && _lastMsgCount > 0) {
-    sendPushNotif('New Message!', 'A user just sent you a message', '💬');
-  }
-  _lastMsgCount = total;
-}
-
 
 // ============================================================
 // RENDER
@@ -1111,10 +952,6 @@ function renderAdmin() {
       <button class="nav-link ${adminState.page==='transactions'?'active':''}" onclick="setPage('transactions')">
         <span>💰</span> Transactions
       </button>
-      <button class="nav-link ${adminState.page==='withdrawals'?'active':''}" onclick="setPage('withdrawals')">
-        💸 Withdrawals
-        <span style="margin-left:auto;font-size:11px;color:#f59e0b;">${adminState.withdrawals.filter(w=>w.status==='pending').length||''}</span>
-      </button>
       <button class="nav-link ${adminState.page==='analytics'?'active':''}" onclick="setPage('analytics')">
         <span>📈</span> Analytics
       </button>
@@ -1134,7 +971,6 @@ function renderAdmin() {
       ${adminState.page==='profiles' ? renderProfiles() : ''}
       ${adminState.page==='transactions' ? renderTransactions() : ''}
       ${adminState.page==='analytics' ? renderAnalytics(totalRevenue) : ''}
-      ${adminState.page==='withdrawals' ? renderWithdrawals() : ''}
     </main>
 
     <!-- BOTTOM NAV (mobile only) -->
@@ -1164,22 +1000,8 @@ function renderAdmin() {
 }
 
 function renderOverview(revenue, activeUsers, convs) {
-  const notifBanner = (typeof Notification !== 'undefined' && Notification.permission === 'default') ? `
-    <div onclick="Notification.requestPermission().then(()=>render())" style="cursor:pointer;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
-      <span style="font-size:28px;">🔔</span>
-      <div><div style="font-weight:700;font-size:14px;">Enable Notifications</div>
-      <div style="font-size:12px;opacity:0.8;">Tap to get instant alerts when users pay or message you</div></div>
-      <span style="margin-left:auto;font-size:20px;">→</span>
-    </div>
-  ` : (typeof Notification !== 'undefined' && Notification.permission === 'granted') ? `
-    <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#22c55e;">
-      🔔 <strong>Notifications active</strong> — instant alerts for payments & messages
-    </div>
-  ` : '';
-
   return `
   <div>
-    ${notifBanner}
     <div class="page-header">
       <div>
         <div class="page-title">Dashboard Overview</div>
@@ -1273,17 +1095,48 @@ function renderOverview(revenue, activeUsers, convs) {
 
 function renderMessages() {
   const convKeys = Object.keys(adminState.conversations);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
+  // Use 768px to be safe across all mobile devices
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  // On mobile: if a conv is open show ONLY the reply panel (full screen)
+  // On mobile with active conv: full screen chat only
   if (isMobile && adminState.activeConv) {
+    return `<div style="height:100%;display:flex;flex-direction:column;">${renderReplyPanel(true)}</div>`;
+  }
+
+  // On mobile without active conv: full screen conversation list only
+  if (isMobile) {
     return `
     <div>
-      ${renderReplyPanel(true)}
+      <div style="padding:12px 16px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">
+        Active Conversations (${convKeys.length})
+      </div>
+      ${convKeys.length === 0 ? '<div class="empty-state"><div class="empty-icon">💬</div><p>No conversations yet</p></div>' : ''}
+      ${convKeys.map(key => {
+        const c = adminState.conversations[key];
+        if (!c || !c.messages) return '';
+        const last = c.messages[c.messages.length-1];
+        const hasNew = last?.role === 'user';
+        const lastContent = last?.content?.startsWith('__img__') ? '📷 Photo' : (last?.content || 'No messages');
+        return `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:${adminState.activeConv===key?'rgba(139,92,246,0.1)':'transparent'};"
+          onclick="adminState.activeConv='${key}';render()">
+          <img style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="${c.profilePhoto}" onerror="this.src='https://i.pravatar.cc/46?img=1'">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-weight:700;font-size:14px;">${c.userName}</div>
+              ${hasNew ? '<span style="background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">NEW</span>' : ''}
+            </div>
+            <div style="font-size:11px;color:var(--accent2);margin-bottom:2px;">as ${c.profileName}</div>
+            <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">${hasNew ? '<span style="color:var(--accent2);">💬 New: </span>' : ''}${lastContent}</div>
+          </div>
+        </div>
+        `;
+      }).join('')}
     </div>
     `;
   }
 
+  // Desktop: side by side layout
   return `
   <div>
     <div class="page-header">
@@ -1300,18 +1153,19 @@ function renderMessages() {
           const c = adminState.conversations[key];
           if (!c || !c.messages) return '';
           const last = c.messages[c.messages.length-1];
+          const hasNew = last?.role === 'user';
           const lastContent = last?.content?.startsWith('__img__') ? '📷 Photo' : (last?.content || 'No messages');
-          const hasNew = adminState.newMsgConvs[key] && adminState.activeConv !== key;
-          const userMsgCount = c.messages.filter(m=>m.role==='user').length;
           return `
-          <div class="conv-item ${adminState.activeConv===key?'active':''}" onclick="adminState.activeConv='${key}';delete adminState.newMsgConvs['${key}'];render()">
+          <div class="conv-item ${adminState.activeConv===key?'active':''}" onclick="adminState.activeConv='${key}';render()">
             <img class="conv-avatar" src="${c.profilePhoto}" alt="${c.profileName}" onerror="this.style.display='none'">
             <div style="flex:1;min-width:0;">
-              <div class="conv-name" style="${hasNew ? 'color:white;' : ''}">${c.userName}</div>
-              <div class="conv-sub">as ${c.profileName}</div>
-              <div class="conv-preview" style="${hasNew ? 'color:var(--accent2);font-weight:600;' : ''}">${hasNew ? '💬 New: ' : ''}${lastContent}</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div class="conv-name">${c.userName}</div>
+                ${hasNew ? '<span style="background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;">NEW</span>' : ''}
+              </div>
+              <div style="font-size:10px;color:var(--accent2);">as ${c.profileName}</div>
+              <div class="conv-preview">${lastContent}</div>
             </div>
-            ${hasNew ? `<div class="conv-badge">NEW</div>` : ''}
           </div>
           `;
         }).join('')}
@@ -1321,7 +1175,7 @@ function renderMessages() {
       ${adminState.activeConv ? renderReplyPanel(false) : `
         <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);">
           <div style="font-size:48px;opacity:0.3;">💬</div>
-          <div>Select a conversation to reply</div>
+          <div style="font-size:14px;">Select a conversation to reply</div>
         </div>
       `}
     </div>
@@ -1334,39 +1188,32 @@ function renderReplyPanel(showBackBtn) {
   if (!conv) return '';
   
   return `
-  <div class="reply-panel" style="${showBackBtn ? 'position:fixed;inset:0;z-index:50;background:var(--bg);' : 'height:100%;'}">
+  <div class="reply-panel" style="${showBackBtn ? 'height:calc(100vh - 130px);display:flex;flex-direction:column;' : ''}">
     <div class="reply-header">
       ${showBackBtn ? `<button onclick="adminState.activeConv=null;render()" style="background:none;border:none;color:var(--accent2);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;padding:0;margin-right:8px;">← Back</button>` : ''}
-      <img src="${conv.profilePhoto}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
+      <img src="${conv.profilePhoto}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display='none'">
       <div>
-        <div style="font-size:13px;font-weight:700;">Replying as ${conv.profileName}</div>
-        <div style="font-size:11px;color:var(--muted);">to ${conv.userName} · ${conv.messages.length} msgs</div>
+        <div style="font-size:13px;font-weight:600;">Replying as ${conv.profileName}</div>
+        <div style="font-size:11px;color:var(--muted);">to ${conv.userName}</div>
       </div>
-      <div style="margin-left:auto;">
-        <span style="font-size:11px;color:var(--success);">● Live</span>
-      </div>
+      <div style="margin-left:auto;font-size:11px;color:var(--success);">● Live</div>
     </div>
-
-    <div class="reply-messages" id="admin-messages">
+    
+    <div class="reply-messages" id="admin-messages" style="flex:1;overflow-y:auto;">
       ${(conv.messages || []).map(m => `
       <div class="msg-bubble ${m.role==='user'?'user':'admin'}">
-        <div class="msg-meta">${m.role==='user' ? '👤 ' + conv.userName : '🌸 ' + conv.profileName} · ${formatAdminTime(m.time)}</div>
+        <div style="font-size:10px;margin-bottom:4px;opacity:0.6;">${m.role==='user'?conv.userName:conv.profileName} · ${formatAdminTime(m.time)}</div>
         ${m.content.startsWith('__img__')
-          ? `<img src="${m.content.slice(7)}" style="max-width:180px;border-radius:8px;display:block;margin-top:4px;" referrerpolicy="no-referrer">`
-          : `<div>${m.content}</div>`}
+          ? `<img src="${m.content.slice(7)}" style="max-width:180px;border-radius:8px;display:block;" referrerpolicy="no-referrer">`
+          : m.content}
       </div>
       `).join('')}
     </div>
-
-    <div class="reply-input-area">
-      <div class="reply-input-row">
-        <textarea class="reply-input" id="admin-reply-input" placeholder="Reply as ${conv.profileName}..."
-          onkeydown="handleAdminKey(event)"></textarea>
-        <button class="photo-btn" onclick="document.getElementById('admin-photo-input').click()" title="Send photo">📷</button>
-        <button class="send-btn" onclick="sendAdminReply()">Send ↑</button>
-      </div>
-      <input type="file" id="admin-photo-input" accept="image/*" style="display:none;" onchange="sendAdminPhoto(this)">
-      <div id="admin-photo-status" style="font-size:11px;color:var(--muted);height:14px;line-height:14px;"></div>
+    
+    <div class="reply-input-area" style="flex-shrink:0;">
+      <textarea class="reply-input" id="admin-reply-input" placeholder="Type reply as ${conv.profileName}..." rows="2"
+        onkeydown="handleAdminKey(event)"></textarea>
+      <button class="send-btn" onclick="sendAdminReply()">Send ↑</button>
     </div>
   </div>
   `;
@@ -1412,61 +1259,61 @@ function renderUsers() {
     </div>
     ` : ''}
     
-    ${filtered.length === 0 ? `
-      <div style="text-align:center;padding:60px 20px;color:var(--muted);">
-        <div style="font-size:48px;margin-bottom:12px;">👥</div>
-        <div style="font-size:15px;">No users yet</div>
-        <div style="font-size:13px;margin-top:6px;">Users appear here when they sign up</div>
-      </div>
-    ` : `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      ${filtered.map(u => `
-      <div style="background:var(--card);border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.07);">
-        <!-- User header -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-          <div style="width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;">
-            ${u.name ? u.name[0] : '?'}
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:15px;">${u.name}</div>
-            <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email}</div>
-          </div>
-          <span class="status-badge ${u.status}">${u.status}</span>
-        </div>
-
-        <!-- Stats row -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;">${u.msgCount}</div>
-            <div style="font-size:10px;color:var(--muted);">Messages</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;color:var(--success);">$${u.balance.toFixed(2)}</div>
-            <div style="font-size:10px;color:var(--muted);">Balance</div>
-          </div>
-          <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:16px;">${adminState.unlockedUsers[u.email] || adminState.unlockedUsers[u.id] ? '🔓' : '🔒'}</div>
-            <div style="font-size:10px;color:var(--muted);">${adminState.unlockedUsers[u.email] || adminState.unlockedUsers[u.id] ? 'Unlocked' : 'Locked'}</div>
-          </div>
-        </div>
-
-        <!-- Action buttons -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button class="action-btn edit" onclick="showEditUser(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">✏️ Edit</button>
-          <button class="action-btn success" onclick="showEditBalance(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">💰 Balance</button>
-          <button class="action-btn ${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?'danger':'success'}" 
-            onclick="${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?`revokeAccess(${u.id})`:`grantAccess(${u.id})`}" 
-            style="padding:10px;border-radius:10px;font-size:13px;">
-            ${adminState.unlockedUsers[u.email]||adminState.unlockedUsers[u.id]?'🔒 Revoke':'🔓 Unlock'}
-          </button>
-          <button class="action-btn danger" onclick="toggleUserStatus(${u.id})" style="padding:10px;border-radius:10px;font-size:13px;">
-            ${u.status==='active'?'⛔ Suspend':'✅ Activate'}
-          </button>
-        </div>
-      </div>
-      `).join('')}
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Messages</th>
+            <th>Balance (USD)</th>
+            <th>Access</th>
+            <th>Last Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">No users yet. Users appear here when they sign up.</td></tr>` : ''}
+          ${filtered.map(u => `
+          <tr>
+            <td>
+              <div class="user-cell">
+                <div style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">
+                  ${u.name[0]}
+                </div>
+                <div>
+                  <div style="font-weight:600;font-size:13px;">${u.name}</div>
+                  <div style="font-size:11px;color:var(--muted);">${u.email}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-size:12px;color:var(--muted);">${u.phone}</td>
+            <td><span class="status-badge ${u.status}">${u.status}</span></td>
+            <td><span style="font-weight:600;">${u.msgCount}</span></td>
+            <td>
+              <span style="font-weight:700;color:var(--success);">$${u.balance.toFixed(2)}</span>
+              <button class="action-btn success" onclick="showEditBalance(${u.id})" style="margin-left:6px;">Edit</button>
+            </td>
+            <td>
+              ${adminState.unlockedUsers[u.id] 
+                ? '<span class="status-badge unlocked">✓ Unlocked</span>' 
+                : '<span class="status-badge inactive">Locked</span>'}
+              <button class="action-btn ${adminState.unlockedUsers[u.id]?'danger':'success'}" 
+                onclick="${adminState.unlockedUsers[u.id]?`revokeAccess(${u.id})`:`grantAccess(${u.id})`}" style="margin-left:6px;">
+                ${adminState.unlockedUsers[u.id]?'Revoke':'Unlock'}
+              </button>
+            </td>
+            <td style="font-size:12px;color:var(--muted);">${u.lastActive}</td>
+            <td>
+              <button class="action-btn edit" onclick="showEditUser(${u.id})">Edit</button>
+              <button class="action-btn danger" onclick="toggleUserStatus(${u.id})">${u.status==='active'?'Suspend':'Activate'}</button>
+            </td>
+          </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
-    `}
   </div>
   `;
 }
@@ -1855,7 +1702,6 @@ function doAdminLogin() {
     if (user === ADMIN_CREDS.user && pass === ADMIN_CREDS.pass) {
       adminState.view = 'dashboard';
       setupAdminFirestoreListeners();
-      requestNotifPermission();
       render();
     } else {
       showAdminToast('Invalid credentials. Please try again.');
@@ -1912,58 +1758,6 @@ function handleAdminKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     sendAdminReply();
-  }
-}
-
-async function sendAdminPhoto(input) {
-  const file = input?.files?.[0];
-  if (!file || !adminState.activeConv) return;
-
-  const statusEl = document.getElementById('admin-photo-status');
-  if (statusEl) { statusEl.textContent = '⏳ Uploading photo...'; statusEl.style.color = 'var(--muted)'; }
-
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'connectglobal');
-
-    const res = await fetch('https://api.cloudinary.com/v1_1/djcu6tsix/image/upload', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-
-    if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed');
-
-    const imageUrl = data.secure_url;
-    const conv = adminState.conversations[adminState.activeConv];
-    if (!conv) return;
-
-    const newMsg = { role: 'assistant', content: '__img__' + imageUrl, time: new Date().toISOString() };
-    conv.messages.push(newMsg);
-
-    // Save to Firestore so user sees the photo in real-time
-    if (window.CGFirestore) {
-      const parts = adminState.activeConv.split('_');
-      const profileId = parts[parts.length - 1];
-      const userEmail = parts.slice(0, -1).join('_');
-      window.CGFirestore.saveConversation(userEmail, profileId, {
-        userName: conv.userName,
-        userEmail: conv.userEmail,
-        profileName: conv.profileName,
-        profilePhoto: conv.profilePhoto,
-        profileCountry: conv.profileCountry,
-        messages: conv.messages
-      }).catch(e => console.log('Firestore photo write error:', e));
-    }
-
-    if (statusEl) { statusEl.textContent = '✅ Photo sent!'; statusEl.style.color = '#34d399'; }
-    setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
-    showAdminToast('📷 Photo sent!');
-    input.value = '';
-    render();
-  } catch(e) {
-    if (statusEl) { statusEl.textContent = '⚠️ Upload failed: ' + e.message; statusEl.style.color = '#f87171'; }
   }
 }
 
@@ -2209,7 +2003,6 @@ function setupAdminFirestoreListeners() {
 
   // All conversations — real-time
   const unsubConvs = window.CGFirestore.listenAllConversations((convs) => {
-    checkForNewMessages(convs);
     adminState.conversations = convs;
 
     // Register/update users list based on conversations
@@ -2242,7 +2035,6 @@ function setupAdminFirestoreListeners() {
 
   // Pending unlocks — real-time
   const unsubPending = window.CGFirestore.listenPendingUnlocks((items) => {
-    checkForNewPayments(items);
     adminState.pendingUnlocks = items;
     render();
   });
@@ -2272,16 +2064,6 @@ function setupAdminFirestoreListeners() {
   });
   adminUnsubscribers.push(unsubTx);
 
-  // Withdrawal requests — real-time
-  const unsubWd = window.CGFirestore.listenWithdrawals((items) => {
-    adminState.withdrawals = items.map(w => ({
-      ...w,
-      time: w.requestedAt?.toDate ? w.requestedAt.toDate() : new Date()
-    })).sort((a,b) => b.time - a.time);
-    render();
-  });
-  adminUnsubscribers.push(unsubWd);
-
   // Referrals — real-time
   const unsubRef = window.CGFirestore.listenReferrals((items) => {
     adminState.referrals = items;
@@ -2289,85 +2071,6 @@ function setupAdminFirestoreListeners() {
   });
   adminUnsubscribers.push(unsubRef);
 }
-
-
-// ============================================================
-// WITHDRAWALS
-// ============================================================
-function renderWithdrawals() {
-  const pending = adminState.withdrawals.filter(w => w.status === 'pending');
-  const done = adminState.withdrawals.filter(w => w.status !== 'pending');
-
-  return `
-  <div class="content-section">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div class="section-title">💸 Withdrawal Requests</div>
-      <span style="font-size:13px;color:var(--muted);">${adminState.withdrawals.length} total</span>
-    </div>
-
-    ${pending.length === 0 ? '' : `
-    <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:14px;padding:16px;margin-bottom:24px;">
-      <div style="font-weight:600;color:#fbbf24;margin-bottom:12px;">⏳ ${pending.length} Pending Request${pending.length>1?'s':''}</div>
-      ${pending.map(w => `
-        <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:14px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-            <div>
-              <div style="font-weight:600;font-size:15px;">${w.userName || w.userEmail}</div>
-              <div style="font-size:12px;color:var(--muted);">${w.userEmail}</div>
-              <div style="font-size:13px;margin-top:6px;">
-                📱 <strong>${w.phone}</strong> &nbsp;|&nbsp;
-                💰 Withdraw: <strong>KSh ${w.amount}</strong> &nbsp;|&nbsp;
-                Fee: <strong style="color:#f59e0b;">KSh ${w.fee}</strong> &nbsp;|&nbsp;
-                Send: <strong style="color:#22c55e;">KSh ${w.amount}</strong>
-              </div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;">${w.time ? w.time.toLocaleString() : ''}</div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button onclick="approveWithdrawal('${w.id}')" style="background:#22c55e;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">✅ Approve</button>
-              <button onclick="rejectWithdrawal('${w.id}')" style="background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">❌ Reject</button>
-            </div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-    `}
-
-    ${done.length === 0 ? '<div style="color:var(--muted);font-size:14px;text-align:center;padding:40px 0;">No completed withdrawals yet</div>' : `
-    <div class="section-title" style="margin-bottom:12px;">History</div>
-    <div style="overflow-x:auto;">
-      <table class="users-table">
-        <thead><tr>
-          <th>User</th><th>Phone</th><th>Amount</th><th>Fee</th><th>Status</th><th>Date</th>
-        </tr></thead>
-        <tbody>
-          ${done.map(w => `<tr>
-            <td><div style="font-weight:500;">${w.userName||w.userEmail}</div><div style="font-size:11px;color:var(--muted);">${w.userEmail}</div></td>
-            <td>${w.phone}</td>
-            <td>KSh ${w.amount}</td>
-            <td>KSh ${w.fee}</td>
-            <td><span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:${w.status==='approved'?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'};color:${w.status==='approved'?'#22c55e':'#ef4444'};">${w.status}</span></td>
-            <td style="font-size:12px;color:var(--muted);">${w.time ? w.time.toLocaleDateString() : ''}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-    `}
-  </div>
-  `;
-}
-
-async function approveWithdrawal(id) {
-  if (!window.CGFirestore) return;
-  await window.CGFirestore.updateWithdrawal(id, 'approved');
-  showAdminToast('✅ Withdrawal approved — remember to send KSh manually via M-Pesa');
-}
-
-async function rejectWithdrawal(id) {
-  if (!window.CGFirestore) return;
-  await window.CGFirestore.updateWithdrawal(id, 'rejected');
-  showAdminToast('❌ Withdrawal rejected');
-}
-
 
 function showAdminToast(msg) {
   adminState.toast = msg;

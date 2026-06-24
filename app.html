@@ -1046,7 +1046,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import {
     getFirestore, collection, doc, setDoc, getDoc, getDocs,
-    onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, updateDoc
+    onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, updateDoc, increment
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -1250,58 +1250,42 @@
       });
     },
 
-    // Register a user's referral code so it can be looked up later
-    async registerUserCode(userEmail, code) {
-      await setDoc(doc(db, 'userCodes', code), { email: userEmail, registeredAt: serverTimestamp() });
-    },
-
-    // Look up an email by referral code
-    async getEmailByCode(code) {
-      const snap = await getDoc(doc(db, 'userCodes', code));
-      return snap.exists() ? snap.data().email : null;
-    },
-
-    // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt, bonusPaid }
+    // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt }
     async recordReferral(referrerCode, newUserEmail) {
-      // Only record once (prevents double-credit on Google re-login)
+      // Prevent double-crediting — check if referral already recorded
       const existing = await getDoc(doc(db, 'referrals', newUserEmail));
-      if (existing.exists()) return; // Already recorded — skip
+      if (existing.exists()) return;
 
-      await setDoc(doc(db, 'referrals', newUserEmail), {
-        referrerCode,
-        newUserEmail,
-        createdAt: serverTimestamp(),
-        bonusPaid: false
-      });
-
-      // Credit KSh 10 to the new user immediately
-      const newUserBalSnap = await getDoc(doc(db, 'userBalances', newUserEmail));
-      const newUserBal = newUserBalSnap.exists() ? (newUserBalSnap.data().balance || 0) : 0;
-      await setDoc(doc(db, 'userBalances', newUserEmail), {
-        balance: newUserBal + 10,
-        updatedAt: serverTimestamp()
-      });
-
-      // Look up referrer email by code and credit them KSh 10 too
-      try {
-        const referrerEmail = await this.getEmailByCode(referrerCode);
-        if (referrerEmail && referrerEmail !== newUserEmail) {
-          const refBalSnap = await getDoc(doc(db, 'userBalances', referrerEmail));
-          const refBal = refBalSnap.exists() ? (refBalSnap.data().balance || 0) : 0;
-          await setDoc(doc(db, 'userBalances', referrerEmail), {
-            balance: refBal + 10,
-            updatedAt: serverTimestamp()
-          });
-        }
-      } catch(e) { console.log('Referrer credit error:', e); }
-
-      // Mark bonus as paid
+      // Save referral record
       await setDoc(doc(db, 'referrals', newUserEmail), {
         referrerCode,
         newUserEmail,
         createdAt: serverTimestamp(),
         bonusPaid: true
       });
+
+      // KSh 10 in USD (approx 1/130)
+      const bonusUSD = parseFloat((10 / 130).toFixed(4));
+
+      // Credit the new user (the referred person)
+      await setDoc(doc(db, 'userBalances', newUserEmail), 
+        { balance: increment(bonusUSD), updatedAt: serverTimestamp() }, 
+        { merge: true }
+      );
+
+      // Find the referrer's email from their referral code stored in userProfiles
+      try {
+        const referrerSnap = await getDoc(doc(db, 'userProfiles', referrerCode));
+        if (referrerSnap.exists()) {
+          const referrerEmail = referrerSnap.data().email;
+          if (referrerEmail) {
+            await setDoc(doc(db, 'userBalances', referrerEmail),
+              { balance: increment(bonusUSD), updatedAt: serverTimestamp() },
+              { merge: true }
+            );
+          }
+        }
+      } catch(e) { console.log('Referrer credit error:', e); }
     },
 
     listenReferrals(callback) {
@@ -1313,6 +1297,12 @@
     },
 
     // User balances — set by admin, read by user
+    async saveUserProfile(email, data) {
+      await setDoc(doc(db, 'userProfiles', data.referralCode), { 
+        ...data, updatedAt: serverTimestamp() 
+      }, { merge: true });
+    },
+
     async setUserBalance(userEmail, balance) {
       await setDoc(doc(db, 'userBalances', userEmail), { balance, updatedAt: serverTimestamp() });
     },
@@ -2093,7 +2083,7 @@ function renderProfilePage() {
     <div class="form-section">
       <div class="form-section-title">🎁 Refer Friends</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
-        Share your referral link — when friends join using it, you both get rewarded!
+        Share your referral link — when a friend signs up using it, <strong style="color:#22c55e;">you both get KSh 10 FREE</strong> added to your balance instantly! 🎉
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <input type="text" class="form-input" id="referral-link" value="${getReferralLink()}" readonly style="font-size:12px;">
@@ -2136,9 +2126,6 @@ async function doLogin() {
     state.currentUser = { name: user.name, email: user.email, uid: user.uid, bio: '' };
     state.view = 'home';
     setupFirestoreListeners();
-    // Register this user's referral code so others can find them
-    const myCode = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
-    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode).catch(()=>{});
   } catch(e) {
     state.authError = friendlyAuthError(e);
   }
@@ -2164,9 +2151,8 @@ async function doSignup() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
-    // Register this user's referral code
-    const myCode2 = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
-    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode2).catch(()=>{});
+    // Save user profile with their referral code so others can look them up
+    await saveUserProfile(user);
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
@@ -2176,17 +2162,38 @@ async function doSignup() {
 }
 
 // Record who referred this new user, if a ?ref= code is in the URL
-function recordReferralIfPresent() {
+async function saveUserProfile(user) {
+  if (!window.CGFirestore) return;
+  try {
+    // Generate referral code from uid or email
+    const code = (user.uid || user.email).slice(0, 8).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+    await window.CGFirestore.saveUserProfile(user.email, {
+      email: user.email,
+      name: user.name || user.displayName || '',
+      referralCode: code,
+      uid: user.uid || ''
+    });
+    // Store locally for referral link generation
+    state.referralCode = code;
+  } catch(e) { console.log('Profile save error:', e); }
+}
+
+async function recordReferralIfPresent() {
   try {
     if (typeof window === 'undefined' || !window.location) return;
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
-    if (!refCode || !window.CGFirestore) return;
-    window.CGFirestore.recordReferral(refCode, state.currentUser.email)
-      .then(() => {
-        showToast('🎁 Referral bonus: KSh 10 added to your balance!');
-      })
-      .catch(e => console.log(e));
+    if (!refCode) return;
+    // Wait for Firestore to be ready
+    if (!window.CGFirestore) {
+      await new Promise(resolve => window.addEventListener('cgFirebaseReady', resolve, { once: true }));
+    }
+    const userEmail = state.currentUser?.email;
+    if (!userEmail) return;
+    await window.CGFirestore.recordReferral(refCode, userEmail);
+    // Show success toast so user knows they got the bonus
+    showToast('🎉 Referral bonus! KSh 10 has been added to your balance!');
+    render(); // refresh balance display
   } catch(e) { console.log('Referral record error:', e); }
 }
 
@@ -2202,9 +2209,7 @@ async function doGoogleSignIn() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
-    // Register this user's referral code
-    const myCode3 = user.uid ? user.uid.replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase() : user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g,'').slice(0,8).toUpperCase();
-    window.CGFirestore && window.CGFirestore.registerUserCode(user.email, myCode3).catch(()=>{});
+    await saveUserProfile(user);
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
@@ -2552,10 +2557,8 @@ function saveProfile() {
 function getReferralCode() {
   const u = state.currentUser;
   if (!u) return '';
-  // Use uid if available (Firebase), otherwise derive from email
-  const base = u.uid || u.email.split('@')[0];
-  // Short, URL-safe code: first 8 chars, alphanumeric only
-  return base.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
+  // Must match saveUserProfile code generation exactly
+  return (u.uid || u.email).slice(0, 8).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
 }
 
 function getReferralLink() {
@@ -2585,7 +2588,7 @@ function copyReferralLink() {
 function shareReferralWhatsApp() {
   const link = getReferralLink();
   const text = encodeURIComponent(
-    `Hey! Join me on ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍 Sign up using my link and we both get rewarded: ${link}`
+    `Hey! Join me on ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍 Sign up using my link and we BOTH get KSh 10 FREE instantly: ${link}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }

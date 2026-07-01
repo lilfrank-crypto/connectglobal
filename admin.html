@@ -5,30 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ConnectGlobal — Admin Dashboard</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
   :root {
-    --bg: #060608;
-    --surface: #10101a;
-    --surface2: #18182a;
-    --border: #252538;
-    --accent: #6d28d9;
-    --accent2: #8b5cf6;
-    --danger: #dc2626;
-    --success: #059669;
-    --gold: #d97706;
-    --text: #e2e2f0;
-    --muted: #6b7280;
-    --radius: 14px;
+    --bg: #08070c;
+    --surface: #131019;
+    --surface2: #1b1725;
+    --border: rgba(255,255,255,0.09);
+    --border-soft: rgba(255,255,255,0.06);
+    --accent: #8b5cf6;
+    --accent2: #a78bfa;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --gold: #f59e0b;
+    --text: #f1f0f7;
+    --muted: #8b899c;
+    --radius: 16px;
+    --radius-sm: 12px;
+    --radius-lg: 22px;
+    --shadow-sm: 0 2px 10px rgba(0,0,0,0.25);
+    --shadow-md: 0 10px 34px rgba(0,0,0,0.4);
+    --shadow-lg: 0 25px 70px rgba(0,0,0,0.55);
+    --ease: cubic-bezier(0.16,1,0.3,1);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
-  
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 800px 500px at 10% -5%, rgba(139,92,246,0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 95% 15%, rgba(99,102,241,0.08) 0%, transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* LOGIN */
@@ -37,23 +50,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at center, rgba(109,40,217,0.12) 0%, transparent 70%);
   }
 
   .login-card {
-    background: var(--surface);
+    background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)), var(--surface);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     padding: 40px;
     width: 380px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    box-shadow: var(--shadow-lg);
   }
 
   .admin-logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 20px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    background: linear-gradient(120deg, #a78bfa, #8b5cf6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -86,35 +100,37 @@
 
   .form-input {
     width: 100%;
-    background: var(--bg);
+    background: rgba(0,0,0,0.22);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
     color: var(--text);
     font-size: 14px;
     font-family: 'Inter', sans-serif;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s var(--ease);
   }
 
-  .form-input:focus { border-color: var(--accent2); }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(139,92,246,0.15); }
 
   .btn {
     width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent), #6d28d9);
     border: none;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     color: white;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
+    transition: transform 0.18s var(--ease), box-shadow 0.25s var(--ease), filter 0.2s;
     margin-top: 6px;
+    box-shadow: 0 8px 24px rgba(139,92,246,0.3);
   }
 
-  .btn:hover { filter: brightness(1.1); }
+  .btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(139,92,246,0.4); }
+  .btn:active { transform: translateY(0); }
 
   /* ADMIN LAYOUT */
   .admin-layout {
@@ -146,7 +162,7 @@
   }
 
   .sidebar-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 16px;
     font-weight: 800;
     background: linear-gradient(135deg, #8b5cf6, #6d28d9);
@@ -174,7 +190,7 @@
   }
 
   .nav-link:hover { background: var(--surface2); color: var(--text); }
-  .nav-link.active { background: rgba(109,40,217,0.15); color: #a78bfa; border-left: 2px solid var(--accent2); }
+  .nav-link.active { background: linear-gradient(90deg, rgba(139,92,246,0.18), rgba(139,92,246,0.03)); color: #c4b5fd; border-left: 2px solid var(--accent); box-shadow: inset 0 0 20px rgba(139,92,246,0.08); }
 
   .nav-section {
     padding: 12px 20px 4px;
@@ -213,7 +229,7 @@
   }
 
   .page-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 20px;
     font-weight: 700;
   }
@@ -227,23 +243,27 @@
   }
 
   .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)), var(--surface);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius);
     padding: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.25s var(--ease), border-color 0.25s var(--ease);
   }
+  .stat-card:hover { transform: translateY(-3px); border-color: rgba(139,92,246,0.35); }
 
   .stat-icon { font-size: 24px; margin-bottom: 10px; }
-  .stat-value { font-size: 28px; font-weight: 700; color: var(--accent2); }
+  .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: #c4b5fd; letter-spacing: -0.01em; }
   .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .stat-change { font-size: 11px; color: var(--success); margin-top: 6px; }
 
   /* TABLES */
   .table-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius);
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
     margin-bottom: 20px;
   }
 
@@ -480,7 +500,7 @@
 
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
 
   .input-group { margin-bottom: 14px; }
 
@@ -653,13 +673,13 @@
 
     .search-input { width: 100%; }
 
-    /* Chat panel — hidden on mobile, handled by JS renderMessages */
+    /* Chat panel stacks vertically */
     .chat-panel {
-      display: flex;
-      flex-direction: column;
-      height: auto;
+      grid-template-columns: 1fr;
+      grid-template-rows: 240px 1fr;
+      height: calc(100vh - 140px);
     }
-    .conv-list { border-right: none; border-bottom: none; width: 100%; }
+    .conv-list { border-right: none; border-bottom: 1px solid var(--border); }
 
     /* Profile grid 2 columns */
     .profiles-grid-admin {
@@ -1095,48 +1115,17 @@ function renderOverview(revenue, activeUsers, convs) {
 
 function renderMessages() {
   const convKeys = Object.keys(adminState.conversations);
-  // Use 768px to be safe across all mobile devices
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
 
-  // On mobile with active conv: full screen chat only
+  // On mobile: if a conv is open show ONLY the reply panel (full screen)
   if (isMobile && adminState.activeConv) {
-    return `<div style="height:100%;display:flex;flex-direction:column;">${renderReplyPanel(true)}</div>`;
-  }
-
-  // On mobile without active conv: full screen conversation list only
-  if (isMobile) {
     return `
     <div>
-      <div style="padding:12px 16px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);">
-        Active Conversations (${convKeys.length})
-      </div>
-      ${convKeys.length === 0 ? '<div class="empty-state"><div class="empty-icon">💬</div><p>No conversations yet</p></div>' : ''}
-      ${convKeys.map(key => {
-        const c = adminState.conversations[key];
-        if (!c || !c.messages) return '';
-        const last = c.messages[c.messages.length-1];
-        const hasNew = last?.role === 'user';
-        const lastContent = last?.content?.startsWith('__img__') ? '📷 Photo' : (last?.content || 'No messages');
-        return `
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:${adminState.activeConv===key?'rgba(139,92,246,0.1)':'transparent'};"
-          onclick="adminState.activeConv='${key}';render()">
-          <img style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex-shrink:0;" src="${c.profilePhoto}" onerror="this.src='https://i.pravatar.cc/46?img=1'">
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-weight:700;font-size:14px;">${c.userName}</div>
-              ${hasNew ? '<span style="background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">NEW</span>' : ''}
-            </div>
-            <div style="font-size:11px;color:var(--accent2);margin-bottom:2px;">as ${c.profileName}</div>
-            <div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">${hasNew ? '<span style="color:var(--accent2);">💬 New: </span>' : ''}${lastContent}</div>
-          </div>
-        </div>
-        `;
-      }).join('')}
+      ${renderReplyPanel(true)}
     </div>
     `;
   }
 
-  // Desktop: side by side layout
   return `
   <div>
     <div class="page-header">
@@ -1153,16 +1142,12 @@ function renderMessages() {
           const c = adminState.conversations[key];
           if (!c || !c.messages) return '';
           const last = c.messages[c.messages.length-1];
-          const hasNew = last?.role === 'user';
           const lastContent = last?.content?.startsWith('__img__') ? '📷 Photo' : (last?.content || 'No messages');
           return `
           <div class="conv-item ${adminState.activeConv===key?'active':''}" onclick="adminState.activeConv='${key}';render()">
             <img class="conv-avatar" src="${c.profilePhoto}" alt="${c.profileName}" onerror="this.style.display='none'">
             <div style="flex:1;min-width:0;">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div class="conv-name">${c.userName}</div>
-                ${hasNew ? '<span style="background:#ef4444;color:white;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;">NEW</span>' : ''}
-              </div>
+              <div class="conv-name">${c.userName}</div>
               <div style="font-size:10px;color:var(--accent2);">as ${c.profileName}</div>
               <div class="conv-preview">${lastContent}</div>
             </div>
@@ -1175,7 +1160,7 @@ function renderMessages() {
       ${adminState.activeConv ? renderReplyPanel(false) : `
         <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);">
           <div style="font-size:48px;opacity:0.3;">💬</div>
-          <div style="font-size:14px;">Select a conversation to reply</div>
+          <div>Select a conversation to reply</div>
         </div>
       `}
     </div>

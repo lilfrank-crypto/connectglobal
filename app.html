@@ -6,31 +6,50 @@
 <meta name="referrer" content="no-referrer">
 <title>ConnectGlobal — Meet People From Around the World</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c27;
-    --border: #2a2a3d;
-    --accent: #7c3aed;
-    --accent2: #a855f7;
+    --bg: #08070c;
+    --surface: #131019;
+    --surface2: #1b1725;
+    --surface-glass: rgba(255,255,255,0.045);
+    --border: rgba(255,255,255,0.09);
+    --border-soft: rgba(255,255,255,0.06);
+    --accent: #8b5cf6;
+    --accent2: #ec4899;
+    --accent3: #6366f1;
     --gold: #f59e0b;
-    --text: #e2e2f0;
-    --muted: #6b7280;
-    --online: #10b981;
+    --text: #f1f0f7;
+    --muted: #8b899c;
+    --online: #22c55e;
     --danger: #ef4444;
-    --radius: 16px;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-lg: 26px;
+    --radius-full: 999px;
+    --shadow-sm: 0 2px 10px rgba(0,0,0,0.25);
+    --shadow-md: 0 10px 34px rgba(0,0,0,0.4);
+    --shadow-lg: 0 25px 70px rgba(0,0,0,0.55);
+    --shadow-glow: 0 8px 28px rgba(139,92,246,0.35);
+    --ease: cubic-bezier(0.16,1,0.3,1);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
-  
+
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -5%, rgba(139,92,246,0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 700px 500px at 90% 10%, rgba(236,72,153,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse 800px 600px at 50% 110%, rgba(99,102,241,0.10) 0%, transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--text);
     font-family: 'Inter', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* AUTH SCREEN */
@@ -39,27 +58,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.1) 0%, transparent 50%),
-                var(--bg);
     padding: 20px;
   }
 
   .auth-card {
-    background: var(--surface);
+    background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02)), var(--surface);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border);
-    border-radius: 24px;
+    border-radius: var(--radius-lg);
     padding: 48px 40px;
     width: 100%;
     max-width: 420px;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-lg);
   }
 
   .logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 28px;
-    font-weight: 800;
-    background: linear-gradient(135deg, #a855f7, #7c3aed, #ec4899);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(120deg, #a78bfa, #8b5cf6, #ec4899);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -74,8 +92,9 @@
 
   .tab-row {
     display: flex;
-    background: var(--bg);
-    border-radius: 12px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-full);
     padding: 4px;
     margin-bottom: 24px;
   }
@@ -86,17 +105,18 @@
     border: none;
     background: transparent;
     color: var(--muted);
-    border-radius: 9px;
+    border-radius: var(--radius-full);
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s var(--ease);
     font-family: 'Inter', sans-serif;
   }
 
   .tab-btn.active {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
     color: white;
+    box-shadow: 0 4px 14px rgba(139,92,246,0.35);
   }
 
   .form-group { margin-bottom: 16px; }
@@ -111,37 +131,38 @@
 
   .form-input {
     width: 100%;
-    background: var(--bg);
+    background: rgba(0,0,0,0.22);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
     color: var(--text);
     font-size: 15px;
     font-family: 'Inter', sans-serif;
-    transition: border-color 0.2s;
+    transition: all 0.2s var(--ease);
     outline: none;
   }
 
-  .form-input:focus { border-color: var(--accent); }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(139,92,246,0.15); }
 
   .btn-primary {
     width: 100%;
-    padding: 13px;
+    padding: 14px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     border: none;
-    border-radius: 12px;
+    border-radius: var(--radius-sm);
     color: white;
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
-    transition: transform 0.1s, box-shadow 0.2s;
+    transition: transform 0.18s var(--ease), box-shadow 0.25s var(--ease), filter 0.2s;
     margin-top: 8px;
+    box-shadow: var(--shadow-glow);
   }
 
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124,58,237,0.4); }
+  .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 12px 34px rgba(139,92,246,0.45); }
   .btn-primary:active { transform: translateY(0); }
-  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; filter: none; }
 
   /* MAIN APP */
   .app-layout {
@@ -168,7 +189,7 @@
   }
 
   .sidebar-logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 18px;
     font-weight: 800;
     background: linear-gradient(135deg, #a855f7, #7c3aed);
@@ -196,7 +217,7 @@
   }
 
   .nav-item:hover { background: var(--surface2); color: var(--text); }
-  .nav-item.active { background: var(--accent); color: white; }
+  .nav-item.active { background: linear-gradient(135deg, var(--accent), var(--accent3)); color: white; box-shadow: 0 4px 14px rgba(139,92,246,0.4); }
 
   .nav-badge {
     position: absolute;
@@ -249,7 +270,7 @@
   }
 
   .page-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 22px;
     font-weight: 700;
   }
@@ -293,18 +314,19 @@
 
   .profile-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-soft);
     border-radius: var(--radius);
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
     position: relative;
+    box-shadow: var(--shadow-sm);
   }
 
   .profile-card:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent);
-    box-shadow: 0 12px 40px rgba(124,58,237,0.2);
+    transform: translateY(-6px) scale(1.01);
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 16px 40px rgba(139,92,246,0.25);
   }
 
   .profile-card-photo {
@@ -316,12 +338,13 @@
     min-height: 160px;
   }
 
-  .profile-card-body { padding: 14px; }
+  .profile-card-body { padding: 14px; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.15)); }
 
   .profile-card-name {
     font-weight: 600;
     font-size: 15px;
     margin-bottom: 3px;
+    letter-spacing: -0.01em;
   }
 
   .profile-card-meta {
@@ -389,15 +412,17 @@
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   .modal-card {
-    background: var(--surface);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)), var(--surface);
+    backdrop-filter: blur(24px);
     border: 1px solid var(--border);
-    border-radius: 24px;
+    border-radius: var(--radius-lg);
     width: 100%;
     max-width: 480px;
     max-height: 90vh;
     overflow-y: auto;
-    animation: slideUp 0.25s;
+    animation: slideUp 0.3s var(--ease);
     scrollbar-width: none;
+    box-shadow: var(--shadow-lg);
   }
 
   .modal-card::-webkit-scrollbar { display: none; }
@@ -412,7 +437,7 @@
   .modal-body { padding: 24px; }
 
   .modal-name {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 26px;
     font-weight: 700;
     margin-bottom: 6px;
@@ -516,7 +541,7 @@
 
   .chat-list-header {
     padding: 20px 20px 12px;
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 18px;
     font-weight: 700;
     border-bottom: 1px solid var(--border);
@@ -689,18 +714,20 @@
 
   /* PAYWALL MODAL */
   .paywall-modal {
-    background: var(--surface);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)), var(--surface);
+    backdrop-filter: blur(24px);
     border: 1px solid var(--border);
-    border-radius: 24px;
+    border-radius: var(--radius-lg);
     padding: 40px;
     width: 100%;
     max-width: 420px;
     text-align: center;
-    animation: slideUp 0.25s;
+    animation: slideUp 0.3s var(--ease);
+    box-shadow: var(--shadow-lg);
   }
 
   .paywall-icon { font-size: 56px; margin-bottom: 16px; }
-  .paywall-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .paywall-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
   .paywall-text { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
 
   .price-tag {
@@ -737,31 +764,42 @@
   .dashboard-page { padding: 32px; }
 
   .balance-card {
-    background: linear-gradient(135deg, #1e1030, #2d1555);
-    border: 1px solid rgba(124,58,237,0.3);
-    border-radius: 20px;
+    background: linear-gradient(140deg, #241338 0%, #3b1663 55%, #4c1d7a 100%);
+    border: 1px solid rgba(139,92,246,0.35);
+    border-radius: var(--radius-lg);
     padding: 28px;
     margin-bottom: 24px;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-md);
   }
 
   .balance-card::after {
     content: '';
     position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 160px;
-    height: 160px;
-    background: radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%);
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(236,72,153,0.28) 0%, transparent 70%);
   }
 
-  .balance-label { font-size: 13px; color: rgba(226,226,240,0.6); margin-bottom: 8px; }
-  .balance-amount { font-family: 'Syne', sans-serif; font-size: 40px; font-weight: 800; color: white; }
-  .balance-sub { font-size: 12px; color: var(--online); margin-top: 4px; }
+  .balance-card::before {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    left: -30px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 70%);
+  }
+
+  .balance-label { font-size: 13px; color: rgba(241,240,247,0.65); margin-bottom: 8px; letter-spacing: 0.02em; }
+  .balance-amount { font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 700; color: white; letter-spacing: -0.02em; position: relative; z-index:1; }
+  .balance-sub { font-size: 12px; color: #4ade80; margin-top: 6px; position: relative; z-index:1; }
 
   .section-title {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 16px;
@@ -806,7 +844,7 @@
     border: 3px solid var(--accent);
   }
 
-  .profile-hero-name { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+  .profile-hero-name { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
   .profile-hero-email { color: var(--muted); font-size: 14px; margin-top: 4px; }
 
   .form-section {
@@ -912,14 +950,15 @@
       display: flex !important;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      height: 64px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
+      height: 68px;
+      background: rgba(19,16,25,0.85);
+      border-top: 1px solid var(--border-soft);
       z-index: 100;
       align-items: center;
       justify-content: space-around;
       padding: 0 8px;
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.3);
     }
 
     .bottom-nav-item {
@@ -941,7 +980,9 @@
     }
 
     .bottom-nav-item.active { color: var(--accent2); }
-    .bottom-nav-item span.icon { font-size: 22px; }
+    .bottom-nav-item.active .icon { filter: drop-shadow(0 0 8px rgba(236,72,153,0.5)); }
+    .bottom-nav-item span.icon { font-size: 22px; transition: transform 0.2s var(--ease); }
+    .bottom-nav-item:active span.icon { transform: scale(0.88); }
 
     .bottom-nav-badge {
       position: absolute;
@@ -1046,7 +1087,7 @@
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import {
     getFirestore, collection, doc, setDoc, getDoc, getDocs,
-    onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, updateDoc, increment
+    onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc, updateDoc
   } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import {
     getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -1252,40 +1293,11 @@
 
     // Referral tracking: referrals/{newUserEmail} -> { referrerCode, newUserEmail, createdAt }
     async recordReferral(referrerCode, newUserEmail) {
-      // Prevent double-crediting — check if referral already recorded
-      const existing = await getDoc(doc(db, 'referrals', newUserEmail));
-      if (existing.exists()) return;
-
-      // Save referral record
       await setDoc(doc(db, 'referrals', newUserEmail), {
         referrerCode,
         newUserEmail,
-        createdAt: serverTimestamp(),
-        bonusPaid: true
+        createdAt: serverTimestamp()
       });
-
-      // KSh 10 in USD (approx 1/130)
-      const bonusUSD = parseFloat((10 / 130).toFixed(4));
-
-      // Credit the new user (the referred person)
-      await setDoc(doc(db, 'userBalances', newUserEmail), 
-        { balance: increment(bonusUSD), updatedAt: serverTimestamp() }, 
-        { merge: true }
-      );
-
-      // Find the referrer's email from their referral code stored in userProfiles
-      try {
-        const referrerSnap = await getDoc(doc(db, 'userProfiles', referrerCode));
-        if (referrerSnap.exists()) {
-          const referrerEmail = referrerSnap.data().email;
-          if (referrerEmail) {
-            await setDoc(doc(db, 'userBalances', referrerEmail),
-              { balance: increment(bonusUSD), updatedAt: serverTimestamp() },
-              { merge: true }
-            );
-          }
-        }
-      } catch(e) { console.log('Referrer credit error:', e); }
     },
 
     listenReferrals(callback) {
@@ -1297,12 +1309,6 @@
     },
 
     // User balances — set by admin, read by user
-    async saveUserProfile(email, data) {
-      await setDoc(doc(db, 'userProfiles', data.referralCode), { 
-        ...data, updatedAt: serverTimestamp() 
-      }, { merge: true });
-    },
-
     async setUserBalance(userEmail, balance) {
       await setDoc(doc(db, 'userBalances', userEmail), { balance, updatedAt: serverTimestamp() });
     },
@@ -1443,7 +1449,6 @@ let state = {
   filter: 'All',
   shuffleSeed: Math.floor(Math.random() * 1000000),
   paywall: null,       // profileId pending unlock
-  withdrawModal: false,
   paywallPhone: '',
   stkSent: false,
   toast: null,
@@ -1633,7 +1638,6 @@ function renderApp() {
     
     ${state.selectedProfile ? renderProfileModal() : ''}
     ${state.paywall ? renderPaywallModal() : ''}
-    ${state.withdrawModal ? renderWithdrawModal() : ''}
     ${state.toast ? `<div class="toast">${state.toast}</div>` : ''}
   </div>
   `;
@@ -1864,113 +1868,6 @@ function renderChatWindow() {
   `;
 }
 
-
-function renderWithdrawModal() {
-  const balKES = state.balanceUSD * 130; // approx KES conversion
-  return `
-  <div class="modal-overlay" onclick="state.withdrawModal=false;render()" style="z-index:1000;">
-    <div class="paywall-modal" onclick="event.stopPropagation()" style="max-width:420px;width:92%;">
-      <div class="paywall-icon">💸</div>
-      <div class="paywall-title">Withdraw Funds</div>
-      <div class="paywall-text">Your balance: <strong>$${state.balanceUSD.toFixed(2)}</strong></div>
-
-      <div style="background:rgba(255,255,255,0.05);border-radius:14px;padding:14px;margin-bottom:18px;font-size:13px;color:var(--muted);line-height:1.8;text-align:left;">
-        <strong style="color:white;">Withdrawal Fees:</strong><br>
-        • Up to KSh 50 → <span style="color:var(--online);">Free</span><br>
-        • KSh 51 – KSh 500 → KSh 100 fee<br>
-        • KSh 501 and above → KSh 200 fee
-      </div>
-
-      <div style="margin-bottom:14px;text-align:left;">
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">Amount to withdraw (KSh)</label>
-        <input type="number" id="withdraw-amount" placeholder="e.g. 200" min="1" oninput="updateWithdrawFeePreview()"
-          style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:15px;box-sizing:border-box;">
-      </div>
-
-      <div style="margin-bottom:18px;text-align:left;">
-        <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px;">M-Pesa phone number</label>
-        <div style="display:flex;gap:8px;">
-          <input type="text" value="+254" readonly style="width:70px;padding:12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:var(--muted);font-size:14px;text-align:center;">
-          <input type="tel" id="withdraw-phone" placeholder="7XX XXX XXX" maxlength="9"
-            style="flex:1;padding:12px 16px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:white;font-size:15px;">
-        </div>
-      </div>
-
-      <div id="withdraw-fee-preview" style="margin-bottom:16px;font-size:13px;color:var(--muted);min-height:20px;"></div>
-
-      <button class="btn-primary" onclick="submitWithdrawal()" style="width:100%;margin-bottom:10px;">Request Withdrawal</button>
-      <button class="btn-close" onclick="state.withdrawModal=false;render()" style="width:100%;">Cancel</button>
-    </div>
-  </div>
-  `;
-}
-
-function getWithdrawFee(amount) {
-  if (amount <= 50) return 0;
-  if (amount <= 500) return 100;
-  return 200;
-}
-
-
-function updateWithdrawFeePreview() {
-  const el = document.getElementById('withdraw-fee-preview');
-  const amount = parseFloat(document.getElementById('withdraw-amount')?.value || 0);
-  if (!el || !amount || amount <= 0) { if(el) el.innerHTML = ''; return; }
-  const fee = getWithdrawFee(amount);
-  const total = amount + fee;
-  const balKES = state.balanceUSD * 130;
-  const canAfford = total <= balKES;
-  el.innerHTML = fee === 0
-    ? '<span style="color:#22c55e;">✅ No fee — you receive KSh ' + amount + '</span>'
-    : '<span style="color:#f59e0b;">⚠️ Fee: KSh ' + fee + ' — Total deducted: KSh ' + total + '</span>'
-      + (canAfford ? '' : '<br><span style="color:#ef4444;">❌ Insufficient balance</span>');
-}
-
-async function submitWithdrawal() {
-  const amountInput = document.getElementById('withdraw-amount');
-  const phoneInput = document.getElementById('withdraw-phone');
-  const amount = parseFloat(amountInput?.value || 0);
-  const phone = phoneInput?.value?.trim() || '';
-
-  if (!amount || amount <= 0) { showToast('Enter a valid amount'); return; }
-  if (phone.length < 9) { showToast('Enter a valid M-Pesa number'); return; }
-
-  const fee = getWithdrawFee(amount);
-  const totalDeducted = amount + fee;
-  const balKES = state.balanceUSD * 130;
-
-  if (totalDeducted > balKES) {
-    showToast('Insufficient balance. Need KSh ' + totalDeducted + ' (amount + KSh ' + fee + ' fee)');
-    return;
-  }
-
-  const fullPhone = '254' + phone.replace(/^0/, '');
-  const user = state.currentUser;
-
-  try {
-    // Save withdrawal request to Firestore
-    const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-    const db = getFirestore();
-    await addDoc(collection(db, 'withdrawalRequests'), {
-      userEmail: user.email,
-      userName: user.name || user.email,
-      amount,
-      fee,
-      totalDeducted,
-      phone: fullPhone,
-      status: 'pending',
-      requestedAt: serverTimestamp(),
-    });
-
-    state.withdrawModal = false;
-    render();
-    showToast('✅ Withdrawal request submitted! We will process it shortly.');
-  } catch (err) {
-    console.error('Withdrawal error:', err);
-    showToast('Error submitting request. Please try again.');
-  }
-}
-
 function renderDashboard() {
   const chatCount = Object.keys(state.conversations).length;
   const msgCount = Object.values(state.messageCounts).reduce((a,b)=>a+b,0);
@@ -1983,7 +1880,6 @@ function renderDashboard() {
       <div class="balance-label">💵 Account Balance</div>
       <div class="balance-amount">$${state.balanceUSD.toFixed(2)}</div>
       <div class="balance-sub">✓ Account Active</div>
-      <button onclick="state.withdrawModal=true;render()" style="margin-top:16px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:10px 24px;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">💸 Withdraw Funds</button>
     </div>
     
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" class="stats-grid-mobile">
@@ -2083,7 +1979,7 @@ function renderProfilePage() {
     <div class="form-section">
       <div class="form-section-title">🎁 Refer Friends</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">
-        Share your referral link — when a friend signs up using it, <strong style="color:#22c55e;">you both get KSh 10 FREE</strong> added to your balance instantly! 🎉
+        Share your referral link — when friends join using it, you both get rewarded!
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px;">
         <input type="text" class="form-input" id="referral-link" value="${getReferralLink()}" readonly style="font-size:12px;">
@@ -2151,8 +2047,6 @@ async function doSignup() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
-    // Save user profile with their referral code so others can look them up
-    await saveUserProfile(user);
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
@@ -2162,38 +2056,13 @@ async function doSignup() {
 }
 
 // Record who referred this new user, if a ?ref= code is in the URL
-async function saveUserProfile(user) {
-  if (!window.CGFirestore) return;
-  try {
-    // Generate referral code from uid or email
-    const code = (user.uid || user.email).slice(0, 8).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
-    await window.CGFirestore.saveUserProfile(user.email, {
-      email: user.email,
-      name: user.name || user.displayName || '',
-      referralCode: code,
-      uid: user.uid || ''
-    });
-    // Store locally for referral link generation
-    state.referralCode = code;
-  } catch(e) { console.log('Profile save error:', e); }
-}
-
-async function recordReferralIfPresent() {
+function recordReferralIfPresent() {
   try {
     if (typeof window === 'undefined' || !window.location) return;
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
-    if (!refCode) return;
-    // Wait for Firestore to be ready
-    if (!window.CGFirestore) {
-      await new Promise(resolve => window.addEventListener('cgFirebaseReady', resolve, { once: true }));
-    }
-    const userEmail = state.currentUser?.email;
-    if (!userEmail) return;
-    await window.CGFirestore.recordReferral(refCode, userEmail);
-    // Show success toast so user knows they got the bonus
-    showToast('🎉 Referral bonus! KSh 10 has been added to your balance!');
-    render(); // refresh balance display
+    if (!refCode || !window.CGFirestore) return;
+    window.CGFirestore.recordReferral(refCode, state.currentUser.email).catch(e => console.log(e));
   } catch(e) { console.log('Referral record error:', e); }
 }
 
@@ -2209,7 +2078,6 @@ async function doGoogleSignIn() {
     state.view = 'home';
     showToast('🎉 Welcome to ConnectGlobal!');
     setupFirestoreListeners();
-    await saveUserProfile(user);
     recordReferralIfPresent();
   } catch(e) {
     state.authError = friendlyAuthError(e);
@@ -2476,8 +2344,7 @@ async function initiateSTK() {
     }
   } catch(e) { console.log('Pending unlock save error:', e); }
 
-  // PayHero STK Push via our secure serverless function
-  const reference = 'CG-' + Date.now();
+  // TinyPesa STK Push via our secure serverless function
   try {
     const res = await fetch('/api/stk-push', {
       method: 'POST',
@@ -2485,13 +2352,12 @@ async function initiateSTK() {
       body: JSON.stringify({
         phone: phone,
         amount: 100,
-        reference: reference,
         userEmail: state.currentUser?.email || '',
         userName: state.currentUser?.name || ''
       })
     });
     const data = await res.json();
-    console.log('PayHero STK response:', data);
+    console.log('Daraja STK response:', data);
 
     if (!data.success) {
       showToast('⚠️ ' + (data.error || 'Payment request failed — try again'));
@@ -2557,8 +2423,10 @@ function saveProfile() {
 function getReferralCode() {
   const u = state.currentUser;
   if (!u) return '';
-  // Must match saveUserProfile code generation exactly
-  return (u.uid || u.email).slice(0, 8).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+  // Use uid if available (Firebase), otherwise derive from email
+  const base = u.uid || u.email.split('@')[0];
+  // Short, URL-safe code: first 8 chars, alphanumeric only
+  return base.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
 }
 
 function getReferralLink() {
@@ -2588,7 +2456,7 @@ function copyReferralLink() {
 function shareReferralWhatsApp() {
   const link = getReferralLink();
   const text = encodeURIComponent(
-    `Hey! Join me on ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍 Sign up using my link and we BOTH get KSh 10 FREE instantly: ${link}`
+    `Hey! Join me on ConnectGlobal — earn money chatting with amazing people from around the world 💰🌍 Sign up using my link and we both get rewarded: ${link}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
